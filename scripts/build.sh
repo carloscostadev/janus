@@ -6,10 +6,10 @@ BUILD_DIR="build"
 APP_BUNDLE="$BUILD_DIR/$APP_NAME.app"
 ICON_SRC_DIR="Sources/LocalPorts/Resources/Assets.xcassets/AppIcon.appiconset"
 
-echo "Building $APP_NAME (release)..."
-swift build -c release
+echo "Building $APP_NAME (release, universal: arm64 + x86_64)..."
+swift build -c release --arch arm64 --arch x86_64
 
-BIN_PATH=$(swift build -c release --show-bin-path)
+BIN_PATH=$(swift build -c release --arch arm64 --arch x86_64 --show-bin-path)
 
 rm -rf "$APP_BUNDLE"
 mkdir -p "$APP_BUNDLE/Contents/MacOS"
@@ -56,9 +56,9 @@ cat > "$APP_BUNDLE/Contents/Info.plist" << PLIST
     <key>CFBundleIdentifier</key>
     <string>com.carloscosta.LocalPorts</string>
     <key>CFBundleVersion</key>
-    <string>1.1.1</string>
+    <string>1.1.3</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.1.1</string>
+    <string>1.1.3</string>
     <key>CFBundleExecutable</key>
     <string>$APP_NAME</string>
     <key>LSMinimumSystemVersion</key>

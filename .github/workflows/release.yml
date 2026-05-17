@@ -16,8 +16,8 @@ jobs:
 
       - name: Build release
         run: |
-          swift build -c release
-          BIN_PATH=$(swift build -c release --show-bin-path)
+          swift build -c release --arch arm64 --arch x86_64
+          BIN_PATH=$(swift build -c release --arch arm64 --arch x86_64 --show-bin-path)
 
           APP_NAME="LocalPorts"
           APP_BUNDLE="$APP_NAME.app"
