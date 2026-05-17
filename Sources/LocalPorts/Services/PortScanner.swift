@@ -80,7 +80,7 @@ final class PortScanner {
             )
         }
 
-        let systemProcesses: Set<String> = ["ControlCe", "rapportd", "stable", "figma_age", "GitHub", "Spotify"]
+        let systemProcesses: Set<String> = ["ControlCe", "rapportd", "stable", "figma_age", "GitHub", "Spotify", "Cursor", "AnyDesk"]
         entries = entries.filter { entry in
             !systemProcesses.contains(entry.processName)
         }

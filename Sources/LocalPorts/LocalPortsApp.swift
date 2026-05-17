@@ -8,6 +8,13 @@ struct LocalPortsApp: App {
 
     init() {
         NSApplication.shared.setActivationPolicy(.accessory)
+
+        let bundleID = Bundle.main.bundleIdentifier ?? "com.carloscosta.LocalPorts"
+        let running = NSRunningApplication.runningApplications(withBundleIdentifier: bundleID)
+        if running.count > 1 {
+            NSApplication.shared.terminate(nil)
+        }
+
         scanner.startPolling()
     }
 
