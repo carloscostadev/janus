@@ -4,23 +4,46 @@ set -e
 APP_NAME="LocalPorts"
 BUILD_DIR="build"
 APP_BUNDLE="$BUILD_DIR/$APP_NAME.app"
+ICON_SRC_DIR="Sources/LocalPorts/Resources/Assets.xcassets/AppIcon.appiconset"
 
 echo "Building $APP_NAME (release)..."
 swift build -c release
 
 BIN_PATH=$(swift build -c release --show-bin-path)
 
-# Create .app bundle
 rm -rf "$APP_BUNDLE"
 mkdir -p "$APP_BUNDLE/Contents/MacOS"
 mkdir -p "$APP_BUNDLE/Contents/Resources"
 
 cp "$BIN_PATH/$APP_NAME" "$APP_BUNDLE/Contents/MacOS/"
 
-# Copy resources bundle if it exists
-RESOURCES="$BIN_PATH/LocalPorts_LocalPorts.bundle"
-if [ -d "$RESOURCES" ]; then
-    cp -R "$RESOURCES" "$APP_BUNDLE/Contents/Resources/"
+# Copy SwiftPM resources bundle if it exists (xcassets, etc.)
+RESOURCES_BUNDLE="$BIN_PATH/LocalPorts_LocalPorts.bundle"
+if [ -d "$RESOURCES_BUNDLE" ]; then
+    cp -R "$RESOURCES_BUNDLE" "$APP_BUNDLE/Contents/Resources/"
+fi
+
+# Build AppIcon.icns from the iconset PNGs in xcassets (for Finder/Spotlight).
+if [ -f "$ICON_SRC_DIR/icon_1024.png" ]; then
+    echo "Building AppIcon.icns from $ICON_SRC_DIR..."
+    ICONSET=$(mktemp -d)/AppIcon.iconset
+    mkdir -p "$ICONSET"
+    cp "$ICON_SRC_DIR/icon_16.png"    "$ICONSET/icon_16x16.png"
+    cp "$ICON_SRC_DIR/icon_32.png"    "$ICONSET/icon_16x16@2x.png"
+    cp "$ICON_SRC_DIR/icon_32.png"    "$ICONSET/icon_32x32.png"
+    cp "$ICON_SRC_DIR/icon_32@2x.png" "$ICONSET/icon_32x32@2x.png"
+    cp "$ICON_SRC_DIR/icon_128.png"   "$ICONSET/icon_128x128.png"
+    cp "$ICON_SRC_DIR/icon_256.png"   "$ICONSET/icon_128x128@2x.png"
+    cp "$ICON_SRC_DIR/icon_256.png"   "$ICONSET/icon_256x256.png"
+    cp "$ICON_SRC_DIR/icon_512.png"   "$ICONSET/icon_256x256@2x.png"
+    cp "$ICON_SRC_DIR/icon_512.png"   "$ICONSET/icon_512x512.png"
+    cp "$ICON_SRC_DIR/icon_1024.png"  "$ICONSET/icon_512x512@2x.png"
+    iconutil -c icns "$ICONSET" -o "$APP_BUNDLE/Contents/Resources/AppIcon.icns"
+    rm -rf "$(dirname "$ICONSET")"
+    ICON_KEY="<key>CFBundleIconFile</key><string>AppIcon</string>"
+else
+    echo "No icon source at $ICON_SRC_DIR; bundle will have no icon."
+    ICON_KEY=""
 fi
 
 cat > "$APP_BUNDLE/Contents/Info.plist" << PLIST
@@ -44,6 +67,7 @@ cat > "$APP_BUNDLE/Contents/Info.plist" << PLIST
     <true/>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
+    $ICON_KEY
 </dict>
 </plist>
 PLIST
