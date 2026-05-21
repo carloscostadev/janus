@@ -2,7 +2,7 @@
 
 A lightweight macOS menu bar app that monitors all active localhost ports. See what's running, kill what you don't need — one click away.
 
-[Website](https://localports.carloscostadev.pt) | [Download](https://github.com/carloscostadev/LocalPorts/releases/latest)
+[Website](https://localports.carloscostadev.pt) | [Download](https://github.com/carloscostadev/localports/releases/latest)
 
 ![LocalPorts](docs/screenshot.png)
 
@@ -17,15 +17,15 @@ A lightweight macOS menu bar app that monitors all active localhost ports. See w
 
 ## Install
 
-Download the latest `.zip` from [Releases](https://github.com/carloscostadev/LocalPorts/releases/latest), unzip, and drag `LocalPorts.app` to `/Applications`.
+Download the latest `.zip` from [Releases](https://github.com/carloscostadev/localports/releases/latest), unzip, and drag `LocalPorts.app` to `/Applications`.
 
 > On first launch, right-click the app and select "Open" to bypass Gatekeeper.
 
 ## Build from Source
 
 ```bash
-git clone https://github.com/carloscostadev/LocalPorts.git
-cd LocalPorts
+git clone https://github.com/carloscostadev/localports.git
+cd localports
 ./scripts/build.sh
 ```
 
