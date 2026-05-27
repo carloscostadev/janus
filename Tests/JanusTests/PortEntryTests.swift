@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import LocalPorts
+@testable import Janus
 
 @Test func portEntryCreation() {
     let home = FileManager.default.homeDirectoryForCurrentUser.path()

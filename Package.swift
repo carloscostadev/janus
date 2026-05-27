@@ -2,12 +2,12 @@
 import PackageDescription
 
 let package = Package(
-    name: "LocalPorts",
+    name: "Janus",
     platforms: [.macOS(.v14)],
     targets: [
         .executableTarget(
-            name: "LocalPorts",
-            path: "Sources/LocalPorts",
+            name: "Janus",
+            path: "Sources/Janus",
             exclude: [
                 "Resources/Info.plist",
             ],
@@ -16,9 +16,9 @@ let package = Package(
             ]
         ),
         .testTarget(
-            name: "LocalPortsTests",
-            dependencies: ["LocalPorts"],
-            path: "Tests/LocalPortsTests"
+            name: "JanusTests",
+            dependencies: ["Janus"],
+            path: "Tests/JanusTests"
         )
     ]
 )

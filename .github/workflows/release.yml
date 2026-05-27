@@ -19,16 +19,16 @@ jobs:
           swift build -c release --arch arm64 --arch x86_64
           BIN_PATH=$(swift build -c release --arch arm64 --arch x86_64 --show-bin-path)
 
-          APP_NAME="LocalPorts"
+          APP_NAME="Janus"
           APP_BUNDLE="$APP_NAME.app"
-          ICON_SRC_DIR="Sources/LocalPorts/Resources/Assets.xcassets/AppIcon.appiconset"
+          ICON_SRC_DIR="Sources/Janus/Resources/Assets.xcassets/AppIcon.appiconset"
 
           mkdir -p "$APP_BUNDLE/Contents/MacOS"
           mkdir -p "$APP_BUNDLE/Contents/Resources"
           cp "$BIN_PATH/$APP_NAME" "$APP_BUNDLE/Contents/MacOS/"
 
           # Copy SwiftPM resources bundle if it exists (xcassets, etc.)
-          RESOURCES_BUNDLE="$BIN_PATH/LocalPorts_LocalPorts.bundle"
+          RESOURCES_BUNDLE="$BIN_PATH/Janus_Janus.bundle"
           if [ -d "$RESOURCES_BUNDLE" ]; then
               cp -R "$RESOURCES_BUNDLE" "$APP_BUNDLE/Contents/Resources/"
           fi
@@ -66,7 +66,7 @@ jobs:
               <key>CFBundleName</key>
               <string>$APP_NAME</string>
               <key>CFBundleIdentifier</key>
-              <string>com.carloscosta.LocalPorts</string>
+              <string>com.carloscosta.Janus</string>
               <key>CFBundleVersion</key>
               <string>$VERSION</string>
               <key>CFBundleShortVersionString</key>
@@ -89,5 +89,5 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: LocalPorts-*-mac.zip
+          files: Janus-*-mac.zip
           generate_release_notes: true

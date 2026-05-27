@@ -1,9 +1,27 @@
 # Changelog
 
-All notable changes to LocalPorts are documented in this file.
+All notable changes to Janus are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.0.0] - 2026-05-27
+
+### Changed
+- **Renamed from LocalPorts to Janus.** Bundle identifier is now `com.carloscosta.Janus`.
+- Repository moved from `carloscostadev/localports` to `carloscostadev/janus` (GitHub keeps the old URL redirecting).
+- Website moved to `https://janus.carloscostadev.pt`.
+
+### Added
+- One-shot migration: on first launch, Janus copies your favorites from the previous LocalPorts app so nothing is lost.
+
+### Notes
+- The old `LocalPorts.app` (bundle ID `com.carloscosta.LocalPorts`) is unaffected and can be deleted manually after upgrading.
+- All previous releases (LocalPorts v1.0.0 → v1.1.3) remain available under the old name in this repo's release history.
+
+---
+
+# LocalPorts (pre-rename history)
 
 ## [1.1.3] - 2026-05-17
 
@@ -49,8 +67,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Process management: kill, restart, or open a port in the browser.
 - Open a project directory directly in the terminal.
 
-[1.1.3]: https://github.com/carloscostadev/localports/compare/v1.1.2...v1.1.3
-[1.1.2]: https://github.com/carloscostadev/localports/compare/v1.1.1...v1.1.2
-[1.1.1]: https://github.com/carloscostadev/localports/compare/v1.0.1...v1.1.1
-[1.0.1]: https://github.com/carloscostadev/localports/compare/v1.0.0...v1.0.1
-[1.0.0]: https://github.com/carloscostadev/localports/releases/tag/v1.0.0
+[1.0.0]: https://github.com/carloscostadev/janus/releases/tag/v1.0.0

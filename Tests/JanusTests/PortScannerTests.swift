@@ -1,5 +1,5 @@
 import Testing
-@testable import LocalPorts
+@testable import Janus
 
 @Test func parseLsofOutput() {
     let output = """

@@ -5,19 +5,19 @@
     <key>CFBundleDevelopmentRegion</key>
     <string>en</string>
     <key>CFBundleExecutable</key>
-    <string>LocalPorts</string>
+    <string>Janus</string>
     <key>CFBundleIdentifier</key>
-    <string>com.carloscosta.LocalPorts</string>
+    <string>com.carloscosta.Janus</string>
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>
-    <string>LocalPorts</string>
+    <string>Janus</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.1.1</string>
+    <string>1.0.0</string>
     <key>CFBundleVersion</key>
-    <string>3</string>
+    <string>1</string>
     <key>LSMinimumSystemVersion</key>
     <string>14.0</string>
     <key>LSUIElement</key>

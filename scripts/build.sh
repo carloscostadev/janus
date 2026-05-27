@@ -1,10 +1,11 @@
 #!/bin/bash
 set -e
 
-APP_NAME="LocalPorts"
+APP_NAME="Janus"
 BUILD_DIR="build"
 APP_BUNDLE="$BUILD_DIR/$APP_NAME.app"
-ICON_SRC_DIR="Sources/LocalPorts/Resources/Assets.xcassets/AppIcon.appiconset"
+ICON_SRC_DIR="Sources/Janus/Resources/Assets.xcassets/AppIcon.appiconset"
+VERSION="1.0.0"
 
 echo "Building $APP_NAME (release, universal: arm64 + x86_64)..."
 swift build -c release --arch arm64 --arch x86_64
@@ -18,7 +19,7 @@ mkdir -p "$APP_BUNDLE/Contents/Resources"
 cp "$BIN_PATH/$APP_NAME" "$APP_BUNDLE/Contents/MacOS/"
 
 # Copy SwiftPM resources bundle if it exists (xcassets, etc.)
-RESOURCES_BUNDLE="$BIN_PATH/LocalPorts_LocalPorts.bundle"
+RESOURCES_BUNDLE="$BIN_PATH/Janus_Janus.bundle"
 if [ -d "$RESOURCES_BUNDLE" ]; then
     cp -R "$RESOURCES_BUNDLE" "$APP_BUNDLE/Contents/Resources/"
 fi
@@ -54,11 +55,11 @@ cat > "$APP_BUNDLE/Contents/Info.plist" << PLIST
     <key>CFBundleName</key>
     <string>$APP_NAME</string>
     <key>CFBundleIdentifier</key>
-    <string>com.carloscosta.LocalPorts</string>
+    <string>com.carloscosta.Janus</string>
     <key>CFBundleVersion</key>
-    <string>1.1.3</string>
+    <string>$VERSION</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.1.3</string>
+    <string>$VERSION</string>
     <key>CFBundleExecutable</key>
     <string>$APP_NAME</string>
     <key>LSMinimumSystemVersion</key>

@@ -27,7 +27,7 @@ struct PortListView: View {
             // HEADER
             VStack(spacing: 0) {
                 HStack {
-                    Text("LocalPorts")
+                    Text("Janus")
                         .font(.headline)
                         .foregroundStyle(.white)
                     Spacer()

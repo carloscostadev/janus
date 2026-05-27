@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-APP_NAME="LocalPorts"
+APP_NAME="Janus"
 BUILD_DIR="build"
 APP_BUNDLE="$BUILD_DIR/$APP_NAME.app"
 
@@ -18,7 +18,7 @@ mkdir -p "$APP_BUNDLE/Contents/Resources"
 cp "$BIN_PATH/$APP_NAME" "$APP_BUNDLE/Contents/MacOS/"
 
 # Copy resources bundle if it exists (asset catalogs)
-RESOURCES="$BIN_PATH/LocalPorts_LocalPorts.bundle"
+RESOURCES="$BIN_PATH/Janus_Janus.bundle"
 if [ -d "$RESOURCES" ]; then
     cp -R "$RESOURCES" "$APP_BUNDLE/Contents/Resources/"
 fi
@@ -31,11 +31,11 @@ cat > "$APP_BUNDLE/Contents/Info.plist" << PLIST
     <key>CFBundleName</key>
     <string>$APP_NAME</string>
     <key>CFBundleIdentifier</key>
-    <string>com.carloscosta.LocalPorts</string>
+    <string>com.carloscosta.Janus</string>
     <key>CFBundleVersion</key>
-    <string>1.1.3</string>
+    <string>1.0.0</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.1.3</string>
+    <string>1.0.0</string>
     <key>CFBundleExecutable</key>
     <string>$APP_NAME</string>
     <key>LSMinimumSystemVersion</key>
