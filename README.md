@@ -1,5 +1,11 @@
 # Janus
 
+[![Latest Release](https://img.shields.io/github/v/release/carloscostadev/janus)](https://github.com/carloscostadev/janus/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/carloscostadev/janus/total)](https://github.com/carloscostadev/janus/releases)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+![Platform](https://img.shields.io/badge/platform-macOS%2014%2B-lightgrey)
+![Swift](https://img.shields.io/badge/swift-5.9-orange)
+
 A lightweight macOS menu bar app that monitors all active localhost ports. See what's running, kill what you don't need - one click away.
 
 [Website](https://janus.carloscostadev.pt) | [Download](https://github.com/carloscostadev/janus/releases/latest)
