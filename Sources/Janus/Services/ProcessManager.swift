@@ -41,7 +41,7 @@ enum ProcessManager {
     }
 
     /// Resolve the current working directory of a process via lsof.
-    /// Single source of truth — previously this was duplicated in PortScanner.
+    /// Single source of truth - previously this was duplicated in PortScanner.
     static func getCwd(pid: Int) -> String {
         let output = Shell.run("lsof -a -p \(pid) -d cwd -Fn 2>/dev/null | grep '^n/' | head -1")
         let path = output.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -88,12 +88,12 @@ enum ProcessManager {
     /// Uses the captured argv so paths with spaces survive intact.
     static func restart(pid: Int) {
         guard let argv = getArgv(pid: pid), !argv.isEmpty else {
-            logger.warning("restart(pid:\(pid, privacy: .public)) — could not read argv")
+            logger.warning("restart(pid:\(pid, privacy: .public)) - could not read argv")
             return
         }
         let workDir = getCwd(pid: pid)
         guard !workDir.isEmpty else {
-            logger.warning("restart(pid:\(pid, privacy: .public)) — could not read cwd")
+            logger.warning("restart(pid:\(pid, privacy: .public)) - could not read cwd")
             return
         }
 

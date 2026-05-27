@@ -7,7 +7,7 @@ final class PortScanner {
     var ports: [PortEntry] = []
     @ObservationIgnored private var timer: Timer?
 
-    /// Processes whose listening ports we always want hidden — system services
+    /// Processes whose listening ports we always want hidden - system services
     /// and noisy desktop apps that aren't relevant to dev work.
     /// (Note: `lsof` truncates COMMAND to 9 chars by default, so these match
     /// the truncated names.)
@@ -44,7 +44,7 @@ final class PortScanner {
                 port: port,
                 projectPath: "",
                 processName: processName,
-                projectRoot: ""  // not resolved yet — see scan()
+                projectRoot: ""  // not resolved yet - see scan()
             ))
         }
 
@@ -78,7 +78,7 @@ final class PortScanner {
     nonisolated static func resolveCwds(for pids: [Int]) -> [Int: String] {
         guard !pids.isEmpty else { return [:] }
         let pidList = pids.map(String.init).joined(separator: ",")
-        // ONE lsof call for all PIDs instead of N — was previously the main
+        // ONE lsof call for all PIDs instead of N - was previously the main
         // CPU hog when many dev servers were running.
         let output = Shell.run("lsof -a -p \(pidList) -d cwd -Fn 2>/dev/null")
         return parseCwdOutput(output)
@@ -110,7 +110,7 @@ final class PortScanner {
                     port: entry.port,
                     projectPath: resolvedPath,
                     processName: entry.processName
-                    // projectRoot computed inside the init — once, here, off main.
+                    // projectRoot computed inside the init - once, here, off main.
                 ))
             }
 

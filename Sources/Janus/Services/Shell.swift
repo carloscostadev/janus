@@ -32,7 +32,7 @@ enum Shell {
     }
 
     /// Fire-and-forget: spawn a detached login shell to run `command` in `cwd`.
-    /// Used for restarting user processes — they must outlive Janus.
+    /// Used for restarting user processes - they must outlive Janus.
     static func runDetached(_ command: String, cwd: String) {
         let escapedCwd = cwd.replacingOccurrences(of: "'", with: "'\\''")
         let wrapped = "cd '\(escapedCwd)' && nohup \(command) > /dev/null 2>&1 &"

@@ -20,7 +20,7 @@ struct PortEntry: Identifiable, Equatable, Hashable {
 
     var id: String { "\(pid)-\(port)" }
 
-    /// Last path component of `projectRoot` — cheap, no I/O.
+    /// Last path component of `projectRoot` - cheap, no I/O.
     var projectName: String { (projectRoot as NSString).lastPathComponent }
 
     /// Display-friendly path with `~` substitution. Pure string work, no I/O.
@@ -37,8 +37,8 @@ struct PortEntry: Identifiable, Equatable, Hashable {
     /// package.json, Gemfile, composer.json, go.mod). Falls back to the first
     /// non-container directory under home.
     ///
-    /// This is *the* expensive operation in this struct — it does multiple
-    /// `FileManager.fileExists` calls — so it MUST only be invoked at scan
+    /// This is *the* expensive operation in this struct - it does multiple
+    /// `FileManager.fileExists` calls - so it MUST only be invoked at scan
     /// time, not from inside computed properties used in view bodies.
     static func resolveProjectRoot(for path: String) -> String {
         let markers = [".git", "package.json", "Gemfile", "composer.json", "go.mod"]
