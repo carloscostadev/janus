@@ -1,0 +1,25 @@
+/* Janus — English (default) strings */
+
+/* Brand mark in the menu header is intentionally NOT localized. */
+
+/* Status pill next to brand */
+"No Ports" = "No Ports";
+"%d Active" = "%d Active";
+
+/* Stat card labels */
+"PORTS" = "PORTS";
+"FAVORITES" = "FAVORITES";
+"PROJECTS" = "PROJECTS";
+
+/* Empty state */
+"No active ports" = "No active ports";
+
+/* Section header */
+"Favorites" = "Favorites";
+
+/* Footer controls */
+"Stop all" = "Stop all";
+"Every 3s" = "Every 3s";
+"Launch at login" = "Launch at login";
+"Quit" = "Quit";
+"Restart" = "Restart";

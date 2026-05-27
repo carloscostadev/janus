@@ -1,0 +1,25 @@
+/* Janus — Portuguese (pt-PT) strings */
+
+/* Brand mark in the menu header is intentionally NOT localized. */
+
+/* Status pill next to brand */
+"No Ports" = "Sem portas";
+"%d Active" = "%d Ativas";
+
+/* Stat card labels */
+"PORTS" = "PORTAS";
+"FAVORITES" = "FAVORITOS";
+"PROJECTS" = "PROJETOS";
+
+/* Empty state */
+"No active ports" = "Nenhuma porta ativa";
+
+/* Section header */
+"Favorites" = "Favoritos";
+
+/* Footer controls */
+"Stop all" = "Parar todas";
+"Every 3s" = "A cada 3s";
+"Launch at login" = "Abrir no arranque";
+"Quit" = "Sair";
+"Restart" = "Reiniciar";

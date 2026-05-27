@@ -59,9 +59,7 @@ struct PortRowView: View {
                     Button {
                         isKilling = true
                         onRestart()
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 4) {
-                            isKilling = false
-                        }
+                        clearKillingAfter(seconds: 4)
                     } label: {
                         Image(systemName: "arrow.clockwise")
                             .font(.caption)
@@ -73,9 +71,7 @@ struct PortRowView: View {
                     Button {
                         isKilling = true
                         onKill()
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-                            isKilling = false
-                        }
+                        clearKillingAfter(seconds: 5)
                     } label: {
                         if isKilling {
                             ProgressView()
@@ -103,5 +99,15 @@ struct PortRowView: View {
         .background(.white.opacity(0.03))
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .opacity(isKilling ? 0.5 : 1)
+    }
+
+    /// Reset the `isKilling` spinner after `seconds`. Uses a Task instead of
+    /// `DispatchQueue.main.asyncAfter` so it gets cancelled when the view
+    /// disappears (no zombie callbacks against stale state).
+    private func clearKillingAfter(seconds: Int) {
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(seconds))
+            isKilling = false
+        }
     }
 }

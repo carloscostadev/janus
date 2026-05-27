@@ -14,7 +14,7 @@ struct PortListView: View {
         scanner.ports.filter { !favoritesManager.isFavorite(port: $0.port) }
     }
 
-    /// Groups non-favorite ports by their project root.
+    /// Groups non-favorite ports by their (already pre-computed) project root.
     private var groupedPorts: [(projectName: String, entries: [PortEntry])] {
         let grouped = Dictionary(grouping: nonFavoritePorts) { $0.projectRoot }
         return grouped
@@ -27,7 +27,7 @@ struct PortListView: View {
             // HEADER
             VStack(spacing: 0) {
                 HStack {
-                    Text("Janus")
+                    Text(verbatim: "Janus")
                         .font(.headline)
                         .foregroundStyle(.white)
                     Spacer()
@@ -35,7 +35,7 @@ struct PortListView: View {
                         Circle()
                             .fill(scanner.ports.isEmpty ? .gray : .green)
                             .frame(width: 8, height: 8)
-                        Text(scanner.ports.isEmpty ? "No Ports" : "\(scanner.ports.count) Active")
+                        Text(scanner.ports.isEmpty ? L("No Ports") : L("%d Active", scanner.ports.count))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -46,9 +46,9 @@ struct PortListView: View {
 
             // STAT CARDS
             HStack(spacing: 8) {
-                StatCard(icon: "🔌", title: "PORTS", value: "\(scanner.ports.count)", titleColor: .blue)
-                StatCard(icon: "⭐", title: "FAVORITES", value: "\(favoritePorts.count)", titleColor: .yellow)
-                StatCard(icon: "📁", title: "PROJECTS", value: "\(groupedPorts.count)", titleColor: .green)
+                StatCard(icon: "🔌", title: L("PORTS"), value: "\(scanner.ports.count)", titleColor: .blue)
+                StatCard(icon: "⭐", title: L("FAVORITES"), value: "\(favoritePorts.count)", titleColor: .yellow)
+                StatCard(icon: "📁", title: L("PROJECTS"), value: "\(groupedPorts.count)", titleColor: .green)
             }
             .padding(.horizontal, 16)
             .padding(.bottom, 12)
@@ -61,7 +61,7 @@ struct PortListView: View {
             ScrollView {
                 VStack(spacing: 6) {
                     if scanner.ports.isEmpty {
-                        Text("Nenhuma porta ativa")
+                        Text(L("No active ports"))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity)
@@ -69,7 +69,7 @@ struct PortListView: View {
                     } else {
                         // Favorites section
                         if !favoritePorts.isEmpty {
-                            sectionHeader(icon: "star.fill", title: "Favoritos", color: .yellow)
+                            sectionHeader(icon: "star.fill", title: L("Favorites"), color: .yellow)
                             ForEach(favoritePorts) { entry in
                                 portRow(entry: entry)
                             }
@@ -98,14 +98,12 @@ struct PortListView: View {
                     for entry in scanner.ports {
                         ProcessManager.kill(pid: entry.pid)
                     }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 4) {
-                        scanner.scan()
-                    }
+                    rescanAfter(seconds: 4)
                 } label: {
                     HStack(spacing: 4) {
                         Image(systemName: "xmark.circle.fill")
                             .font(.caption)
-                        Text("Parar todas")
+                        Text(L("Stop all"))
                             .font(.caption)
                     }
                     .foregroundStyle(.red.opacity(0.8))
@@ -123,11 +121,11 @@ struct PortListView: View {
                 Image(systemName: "arrow.clockwise")
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
-                Text("A cada 3s")
+                Text(L("Every 3s"))
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
                 Spacer()
-                Text("v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?")")
+                Text(verbatim: "v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?")")
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
             }
@@ -139,26 +137,32 @@ struct PortListView: View {
 
             // FOOTER
             HStack {
-                Toggle("Abrir ao iniciar", isOn: $launchAtLogin)
-                    .onChange(of: launchAtLogin) { _, newValue in
-                        do {
-                            if newValue {
-                                try SMAppService.mainApp.register()
-                            } else {
-                                try SMAppService.mainApp.unregister()
-                            }
-                        } catch {
-                            print("Launch at login error: \(error)")
+                Toggle(isOn: $launchAtLogin) {
+                    Text(L("Launch at login"))
+                }
+                .onChange(of: launchAtLogin) { _, newValue in
+                    do {
+                        if newValue {
+                            try SMAppService.mainApp.register()
+                        } else {
+                            try SMAppService.mainApp.unregister()
                         }
+                    } catch {
+                        print("Launch at login error: \(error)")
                     }
-                    .toggleStyle(.checkbox)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                }
+                .toggleStyle(.checkbox)
+                .font(.caption)
+                .foregroundStyle(.secondary)
                 Spacer()
                 Button {
                     NSApplication.shared.terminate(nil)
                 } label: {
-                    Label("Sair", systemImage: "xmark.circle")
+                    Label {
+                        Text(L("Quit"))
+                    } icon: {
+                        Image(systemName: "xmark.circle")
+                    }
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(.secondary)
@@ -168,11 +172,16 @@ struct PortListView: View {
                     let config = NSWorkspace.OpenConfiguration()
                     config.createsNewApplicationInstance = true
                     NSWorkspace.shared.openApplication(at: url, configuration: config)
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    Task { @MainActor in
+                        try? await Task.sleep(for: .milliseconds(500))
                         NSApplication.shared.terminate(nil)
                     }
                 } label: {
-                    Label("Reiniciar", systemImage: "arrow.clockwise")
+                    Label {
+                        Text(L("Restart"))
+                    } icon: {
+                        Image(systemName: "arrow.clockwise")
+                    }
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(.secondary)
@@ -207,18 +216,14 @@ struct PortListView: View {
             showPath: showPath,
             onKill: {
                 ProcessManager.kill(pid: entry.pid)
-                DispatchQueue.main.asyncAfter(deadline: .now() + 4) {
-                    scanner.scan()
-                }
+                rescanAfter(seconds: 4)
             },
             onOpenBrowser: {
                 ProcessManager.openInBrowser(port: entry.port)
             },
             onRestart: {
                 ProcessManager.restart(pid: entry.pid)
-                DispatchQueue.main.asyncAfter(deadline: .now() + 4) {
-                    scanner.scan()
-                }
+                rescanAfter(seconds: 4)
             },
             onToggleFavorite: {
                 favoritesManager.toggle(port: entry.port)
@@ -227,6 +232,15 @@ struct PortListView: View {
                 ProcessManager.openTerminal(path: entry.projectPath)
             }
         )
+    }
+
+    /// Trigger a follow-up scan after `seconds` so the UI reflects the result
+    /// of a kill/restart once the kernel has cleaned things up.
+    private func rescanAfter(seconds: Int) {
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(seconds))
+            scanner.scan()
+        }
     }
 }
 

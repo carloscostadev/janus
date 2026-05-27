@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "Janus",
+    defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     targets: [
         .executableTarget(
@@ -12,7 +13,9 @@ let package = Package(
                 "Resources/Info.plist",
             ],
             resources: [
-                .process("Resources/Assets.xcassets"),
+                // Process the whole Resources dir so Assets.xcassets *and* the
+                // .lproj localization folders are bundled together.
+                .process("Resources"),
             ]
         ),
         .testTarget(
