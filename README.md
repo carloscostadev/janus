@@ -4,8 +4,6 @@ A lightweight macOS menu bar app that monitors all active localhost ports. See w
 
 [Website](https://janus.carloscostadev.pt) | [Download](https://github.com/carloscostadev/janus/releases/latest)
 
-![Janus](docs/screenshot.png)
-
 > Janus is the Roman god of doorways, gates, and transitions - fitting for an app that watches every port open on your machine.
 > Previously released as **LocalPorts**; renamed in v1.0.0 (favorites are migrated automatically on first launch).
 
