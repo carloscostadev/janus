@@ -23,3 +23,8 @@
 "Launch at login" = "Abrir no arranque";
 "Quit" = "Sair";
 "Restart" = "Reiniciar";
+
+/* Stop all confirmation */
+"Stop %d processes?" = "Parar %d processos?";
+"Stop" = "Parar";
+"Cancel" = "Cancelar";

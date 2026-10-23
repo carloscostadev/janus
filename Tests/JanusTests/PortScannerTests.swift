@@ -40,3 +40,39 @@ import Testing
     #expect(PortScanner.parsePort(from: "[::1]:5173") == 5173)
     #expect(PortScanner.parsePort(from: "invalid") == nil)
 }
+
+@Test func shellRunReturnsNilWhenExecutableMissing() {
+    #expect(Shell.run("/nonexistent/janus-test-binary", []) == nil)
+    #expect(Shell.run("/bin/echo", ["ok"]) == "ok\n")
+}
+
+@Test func shellRunDrainsOutputLargerThanPipeBuffer() {
+    // Waiting for exit before reading deadlocked once stdout exceeded 64 KB.
+    let output = Shell.run("/bin/sh", ["-c", "head -c 300000 /dev/zero | tr '\\\\0' 'x'"])
+    #expect(output?.count == 300_000)
+}
+
+@Test func noiseFilterIncludesKnownDesktopServices() {
+    for name in ["ControlCe", "rapportd", "Spotify", "Cursor", "AnyDesk", "IPNExtens"] {
+        #expect(PortScanner.systemProcesses.contains(name))
+    }
+    #expect(!PortScanner.systemProcesses.contains("node"))
+}
+
+@Test func performScanReusesProjectRootCache() {
+    // A sentinel root proves cached roots are reused instead of re-walking
+    // the filesystem; only paths seen in this scan survive in the new cache.
+    guard let first = PortScanner.performScan(rootCache: [:]) else {
+        Issue.record("lsof could not run")
+        return
+    }
+    let seeded = Dictionary(uniqueKeysWithValues: Set(first.ports.map(\.projectPath)).map { ($0, "/sentinel/\($0.count)") })
+    guard let second = PortScanner.performScan(rootCache: seeded.merging(["/stale/path": "/stale"]) { a, _ in a }) else {
+        Issue.record("lsof could not run")
+        return
+    }
+    #expect(second.projectRootCache["/stale/path"] == nil)
+    for entry in second.ports where seeded[entry.projectPath] != nil {
+        #expect(entry.projectRoot == seeded[entry.projectPath])
+    }
+}

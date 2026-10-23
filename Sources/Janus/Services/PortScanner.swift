@@ -6,6 +6,11 @@ import Observation
 final class PortScanner {
     var ports: [PortEntry] = []
     @ObservationIgnored private var timer: Timer?
+    /// Guards against overlapping scans if one ever takes longer than the interval.
+    @ObservationIgnored private var isScanning = false
+    /// cwd -> project root. Only touched on the main actor; a snapshot is
+    /// handed to the background scan and the pruned result stored back.
+    @ObservationIgnored private var projectRootCache: [String: String] = [:]
 
     /// Processes whose listening ports we always want hidden - system services
     /// and noisy desktop apps that aren't relevant to dev work.
@@ -13,6 +18,7 @@ final class PortScanner {
     /// the truncated names.)
     nonisolated static let systemProcesses: Set<String> = [
         "ControlCe", "rapportd", "stable", "figma_age", "GitHub", "Spotify", "Cursor", "AnyDesk",
+        "IPNExtens",  // Tailscale network extension
     ]
 
     // MARK: - Parsing helpers (pure, testable, isolation-free)
@@ -51,75 +57,63 @@ final class PortScanner {
         return entries
     }
 
-    /// Parse the `-Fn` output of `lsof -a -p PID1,PID2,... -d cwd` into a
-    /// `[pid: cwd]` map. The output alternates `p<pid>` and `n<path>` lines.
-    nonisolated static func parseCwdOutput(_ output: String) -> [Int: String] {
-        var result: [Int: String] = [:]
-        var currentPid: Int?
-        for line in output.components(separatedBy: "\n") {
-            guard let first = line.first else { continue }
-            let rest = String(line.dropFirst())
-            switch first {
-            case "p":
-                currentPid = Int(rest)
-            case "n":
-                if let pid = currentPid, !rest.isEmpty {
-                    result[pid] = rest
-                }
-            default:
-                break
-            }
+    // MARK: - Scan (runs off the main thread)
+
+    struct ScanResult {
+        let ports: [PortEntry]
+        let projectRootCache: [String: String]
+    }
+
+    /// One full scan: a single `lsof` for listening sockets (exec'd directly,
+    /// no shell), cwds read natively, project roots served from `rootCache`
+    /// when the cwd was already resolved. Returns `nil` when `lsof` could not
+    /// run, so the caller keeps the last known list instead of blanking it.
+    nonisolated static func performScan(rootCache: [String: String]) -> ScanResult? {
+        guard let output = Shell.run("/usr/sbin/lsof", ["-iTCP", "-sTCP:LISTEN", "-P", "-n"]) else { return nil }
+        let rawEntries = parseLsofOutput(output)
+            .filter { !systemProcesses.contains($0.processName) }
+
+        var cache: [String: String] = [:]
+        var enriched: [PortEntry] = []
+        enriched.reserveCapacity(rawEntries.count)
+        for entry in rawEntries {
+            let cwd = ProcessManager.getCwd(pid: entry.pid)
+            let isSystemPath = cwd.isEmpty || cwd == "/" || cwd.hasPrefix("/private/")
+            let resolvedPath = isSystemPath ? entry.processName : cwd
+            let root = cache[resolvedPath] ?? rootCache[resolvedPath] ?? PortEntry.resolveProjectRoot(for: resolvedPath)
+            cache[resolvedPath] = root
+            enriched.append(PortEntry(
+                pid: entry.pid,
+                port: entry.port,
+                projectPath: resolvedPath,
+                processName: entry.processName,
+                projectRoot: root
+            ))
         }
-        return result
+
+        // `cache` only keeps paths seen in this scan, so it can't grow unbounded.
+        return ScanResult(ports: enriched.sorted { $0.port < $1.port }, projectRootCache: cache)
     }
 
-    // MARK: - Shell glue (called off the main thread by scan())
-
-    nonisolated static func resolveCwds(for pids: [Int]) -> [Int: String] {
-        guard !pids.isEmpty else { return [:] }
-        let pidList = pids.map(String.init).joined(separator: ",")
-        // ONE lsof call for all PIDs instead of N - was previously the main
-        // CPU hog when many dev servers were running.
-        let output = Shell.run("lsof -a -p \(pidList) -d cwd -Fn 2>/dev/null")
-        return parseCwdOutput(output)
-    }
-
-    // MARK: - Scan + polling
-
-    /// Trigger a refresh. The actual work (shelling out to `lsof`, resolving
-    /// project roots) runs on a background task so the menu bar UI never
-    /// blocks. Final assignment happens on the main actor.
+    /// Trigger a refresh. The actual work runs on a background task so the
+    /// menu bar UI never blocks. Final assignment happens on the main actor,
+    /// and only when something changed (avoids needless SwiftUI invalidation
+    /// of the menu bar label every 3s).
     func scan() {
-        Task.detached(priority: .userInitiated) { [weak self] in
-            let output = Shell.run("lsof -iTCP -sTCP:LISTEN -P -n 2>/dev/null")
-            let rawEntries = PortScanner.parseLsofOutput(output)
+        guard !isScanning else { return }
+        isScanning = true
+        let rootCache = projectRootCache
 
-            // Batch resolve cwds in a single shell out.
-            let pids = rawEntries.map { $0.pid }
-            let cwds = PortScanner.resolveCwds(for: pids)
-
-            // Build the final entries with project paths + roots resolved once.
-            var enriched: [PortEntry] = []
-            enriched.reserveCapacity(rawEntries.count)
-            for entry in rawEntries {
-                let cwd = cwds[entry.pid] ?? ""
-                let isSystemPath = cwd.isEmpty || cwd == "/" || cwd.hasPrefix("/private/")
-                let resolvedPath = isSystemPath ? entry.processName : cwd
-                enriched.append(PortEntry(
-                    pid: entry.pid,
-                    port: entry.port,
-                    projectPath: resolvedPath,
-                    processName: entry.processName
-                    // projectRoot computed inside the init - once, here, off main.
-                ))
-            }
-
-            let filtered = enriched
-                .filter { !PortScanner.systemProcesses.contains($0.processName) }
-                .sorted { $0.port < $1.port }
-
+        Task.detached(priority: .utility) { [weak self] in
+            let result = PortScanner.performScan(rootCache: rootCache)
             await MainActor.run { [weak self] in
-                self?.ports = filtered
+                guard let self else { return }
+                self.isScanning = false
+                guard let result else { return }
+                self.projectRootCache = result.projectRootCache
+                if self.ports != result.ports {
+                    self.ports = result.ports
+                }
             }
         }
     }
@@ -133,6 +127,8 @@ final class PortScanner {
                 self?.scan()
             }
         }
+        // Let the system coalesce wakeups with other timers (energy impact).
+        timer?.tolerance = interval * 0.2
     }
 
     func stopPolling() {

@@ -40,34 +40,108 @@ enum ProcessManager {
         return args.isEmpty ? nil : args
     }
 
-    /// Resolve the current working directory of a process via lsof.
-    /// Single source of truth - previously this was duplicated in PortScanner.
+    /// Current working directory of a process, read natively via
+    /// `proc_pidinfo(PROC_PIDVNODEPATHINFO)`: no `lsof` fork, ~microseconds.
+    /// Single source of truth for PortScanner and restart(). Returns "" when
+    /// the process is gone or belongs to another user.
     static func getCwd(pid: Int) -> String {
-        let output = Shell.run("lsof -a -p \(pid) -d cwd -Fn 2>/dev/null | grep '^n/' | head -1")
-        let path = output.trimmingCharacters(in: .whitespacesAndNewlines)
-        if path.hasPrefix("n") {
-            return String(path.dropFirst())
+        var info = proc_vnodepathinfo()
+        let size = Int32(MemoryLayout<proc_vnodepathinfo>.size)
+        guard proc_pidinfo(Int32(pid), PROC_PIDVNODEPATHINFO, 0, &info, size) == size else { return "" }
+        return withUnsafePointer(to: &info.pvi_cdir.vip_path) { ptr in
+            ptr.withMemoryRebound(to: CChar.self, capacity: Int(MAXPATHLEN)) { String(cString: $0) }
         }
-        return ""
     }
 
-    /// SIGTERM the entire process group (e.g. npm + node) so the parent
-    /// doesn't respawn the child, then SIGKILL after 3s if still alive.
-    static func kill(pid: Int) {
-        let pid32 = Int32(pid)
-        let pgid = getpgid(pid32)
-        if pgid > 0 {
-            Foundation.kill(-pgid, SIGTERM)
-        }
-        Foundation.kill(pid32, SIGTERM)
+    // MARK: - Signalling (safety checks)
 
-        Task.detached { [pid32, pgid] in
+    /// Owner + start time of a live process. Comparing two snapshots tells us
+    /// whether a PID still refers to the *same* process (PIDs get reused).
+    struct ProcessIdentity: Equatable {
+        let uid: uid_t
+        let startSeconds: Int
+        let startMicroseconds: Int32
+
+        init?(pid: pid_t) {
+            var info = kinfo_proc()
+            var size = MemoryLayout<kinfo_proc>.stride
+            var mib: [Int32] = [CTL_KERN, KERN_PROC, KERN_PROC_PID, pid]
+            guard pid > 0, sysctl(&mib, 4, &info, &size, nil, 0) == 0, size > 0 else { return nil }
+            uid = info.kp_eproc.e_ucred.cr_uid
+            startSeconds = info.kp_proc.p_un.__p_starttime.tv_sec
+            startMicroseconds = info.kp_proc.p_un.__p_starttime.tv_usec
+        }
+    }
+
+    /// Whether signalling the whole process group (`kill(-pgid)`) is safe.
+    /// Refuses pgid <= 1 (`kill(-1)` would hit every process of the user),
+    /// Janus's own group, groups owned by someone else, and groups led by a
+    /// `.app` bundle (e.g. a dev server spawned by an editor shares the
+    /// editor's group; killing the group would close the editor).
+    static func shouldSignalGroup(pgid: pid_t, ownGroup: pid_t, leaderUID: uid_t?, currentUID: uid_t, leaderIsAppBundle: Bool) -> Bool {
+        pgid > 1 && pgid != ownGroup && leaderUID == currentUID && !leaderIsAppBundle
+    }
+
+    /// Whether Janus may signal `pid` at all: a real user process, not
+    /// launchd, not Janus itself, owned by the current user.
+    static func canSignal(pid: pid_t, ownPID: pid_t, ownerUID: uid_t?, currentUID: uid_t) -> Bool {
+        pid > 1 && pid != ownPID && ownerUID == currentUID
+    }
+
+    private static func executablePath(pid: pid_t) -> String {
+        var buffer = [CChar](repeating: 0, count: Int(MAXPATHLEN) * 4)
+        guard proc_pidpath(pid, &buffer, UInt32(buffer.count)) > 0 else { return "" }
+        return String(cString: buffer)
+    }
+
+    /// A process we decided we may signal, plus (optionally) its group.
+    private struct Target: Sendable {
+        let pid: pid_t
+        let pgid: pid_t?
+        let identity: ProcessIdentity
+
+        init?(pid rawPid: Int) {
+            let pid = pid_t(rawPid)
+            guard let identity = ProcessIdentity(pid: pid),
+                  ProcessManager.canSignal(pid: pid, ownPID: getpid(), ownerUID: identity.uid, currentUID: getuid())
+            else { return nil }
+            self.pid = pid
+            self.identity = identity
+
+            let pgid = getpgid(pid)
+            let safeGroup = ProcessManager.shouldSignalGroup(
+                pgid: pgid,
+                ownGroup: getpgrp(),
+                leaderUID: ProcessIdentity(pid: pgid)?.uid,
+                currentUID: getuid(),
+                leaderIsAppBundle: ProcessManager.executablePath(pid: pgid).contains(".app/Contents/MacOS/")
+            )
+            self.pgid = safeGroup ? pgid : nil
+        }
+
+        func send(_ signal: Int32) {
+            if let pgid { Foundation.kill(-pgid, signal) }
+            Foundation.kill(pid, signal)
+        }
+
+        /// True while `pid` still refers to the process we captured.
+        var isStillRunning: Bool { ProcessIdentity(pid: pid) == identity }
+    }
+
+    /// SIGTERM the process (and its group when safe, e.g. npm + node, so the
+    /// parent doesn't respawn the child), then SIGKILL after 3s if the *same*
+    /// process is still alive.
+    static func kill(pid: Int) {
+        guard let target = Target(pid: pid) else {
+            logger.warning("kill(pid:\(pid, privacy: .public)) refused - process gone or not owned by current user")
+            return
+        }
+        target.send(SIGTERM)
+
+        Task.detached {
             try? await Task.sleep(for: .seconds(3))
-            if Foundation.kill(pid32, 0) == 0 {
-                if pgid > 0 {
-                    Foundation.kill(-pgid, SIGKILL)
-                }
-                Foundation.kill(pid32, SIGKILL)
+            if target.isStillRunning {
+                target.send(SIGKILL)
             }
         }
     }
@@ -77,16 +151,13 @@ enum ProcessManager {
         NSWorkspace.shared.open(url)
     }
 
-    static func getCommand(pid: Int) -> (command: String, workDir: String)? {
-        let args = Shell.run("ps -o args= -p \(pid)").trimmingCharacters(in: .whitespacesAndNewlines)
-        if args.isEmpty { return nil }
-        let dir = getCwd(pid: pid)
-        return (args, dir)
-    }
-
-    /// Kill the process group then relaunch the original command in the same cwd.
+    /// Kill the process (group) then relaunch the original command in the same cwd.
     /// Uses the captured argv so paths with spaces survive intact.
     static func restart(pid: Int) {
+        guard let target = Target(pid: pid) else {
+            logger.warning("restart(pid:\(pid, privacy: .public)) refused - process gone or not owned by current user")
+            return
+        }
         guard let argv = getArgv(pid: pid), !argv.isEmpty else {
             logger.warning("restart(pid:\(pid, privacy: .public)) - could not read argv")
             return
@@ -97,20 +168,12 @@ enum ProcessManager {
             return
         }
 
-        let pid32 = Int32(pid)
-        let pgid = getpgid(pid32)
-        if pgid > 0 {
-            Foundation.kill(-pgid, SIGTERM)
-        }
-        Foundation.kill(pid32, SIGTERM)
+        target.send(SIGTERM)
 
-        Task.detached { [pid32, pgid, argv, workDir] in
+        Task.detached {
             try? await Task.sleep(for: .seconds(2))
-            if Foundation.kill(pid32, 0) == 0 {
-                if pgid > 0 {
-                    Foundation.kill(-pgid, SIGKILL)
-                }
-                Foundation.kill(pid32, SIGKILL)
+            if target.isStillRunning {
+                target.send(SIGKILL)
             }
             try? await Task.sleep(for: .seconds(1))
 

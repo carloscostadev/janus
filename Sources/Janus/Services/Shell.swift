@@ -1,34 +1,37 @@
 import Foundation
 import os
 
-/// Tiny wrapper around `Process` for running shell commands and capturing stdout.
+/// Tiny wrapper around `Process` for running commands and capturing stdout.
 /// Centralising this avoids the previous duplication between PortScanner and
 /// ProcessManager and gives us one place to add logging / sandboxing later.
 enum Shell {
     private static let logger = Logger(subsystem: "com.carloscosta.Janus", category: "Shell")
 
-    /// Run `command` through `/bin/zsh -c` and return stdout (UTF-8).
-    /// Errors are logged via `os_log` and surface as an empty string so callers
-    /// can keep working without try/catch noise.
-    @discardableResult
-    static func run(_ command: String) -> String {
+    /// Exec `executable` directly (no intermediate shell, so no quoting issues
+    /// and one fork less per call) and return its stdout (UTF-8).
+    ///
+    /// Returns `nil` only when the process could not be spawned, so callers can
+    /// tell "command failed" apart from "command ran and printed nothing".
+    /// stdout is drained *before* waiting for exit: waiting first deadlocks as
+    /// soon as the output exceeds the pipe buffer (64 KB).
+    static func run(_ executable: String, _ arguments: [String]) -> String? {
         let process = Process()
         let pipe = Pipe()
-        process.executableURL = URL(fileURLWithPath: "/bin/zsh")
-        process.arguments = ["-c", command]
+        process.executableURL = URL(fileURLWithPath: executable)
+        process.arguments = arguments
         process.standardOutput = pipe
         process.standardError = FileHandle.nullDevice
 
         do {
             try process.run()
         } catch {
-            logger.error("Shell.run failed to spawn /bin/zsh -c \(command, privacy: .public): \(error.localizedDescription, privacy: .public)")
-            return ""
+            logger.error("Shell.run failed to spawn \(executable, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            return nil
         }
-        process.waitUntilExit()
 
         let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        return String(data: data, encoding: .utf8) ?? ""
+        process.waitUntilExit()
+        return String(decoding: data, as: UTF8.self)
     }
 
     /// Fire-and-forget: spawn a detached login shell to run `command` in `cwd`.

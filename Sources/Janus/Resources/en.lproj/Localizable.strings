@@ -23,3 +23,8 @@
 "Launch at login" = "Launch at login";
 "Quit" = "Quit";
 "Restart" = "Restart";
+
+/* Stop all confirmation */
+"Stop %d processes?" = "Stop %d processes?";
+"Stop" = "Stop";
+"Cancel" = "Cancel";

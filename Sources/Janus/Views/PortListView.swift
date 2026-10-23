@@ -1,3 +1,4 @@
+import os
 import ServiceManagement
 import SwiftUI
 
@@ -5,6 +6,8 @@ struct PortListView: View {
     let scanner: PortScanner
     let favoritesManager: FavoritesManager
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
+    /// Two-step "Stop all": first click asks, second click kills.
+    @State private var confirmStopAll = false
 
     private var favoritePorts: [PortEntry] {
         scanner.ports.filter { favoritesManager.isFavorite(port: $0.port) }
@@ -94,22 +97,46 @@ struct PortListView: View {
                     .padding(.horizontal, 16)
                     .padding(.vertical, 4)
 
-                Button {
-                    for entry in scanner.ports {
-                        ProcessManager.kill(pid: entry.pid)
-                    }
-                    rescanAfter(seconds: 4)
-                } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: "xmark.circle.fill")
+                if confirmStopAll {
+                    let pids = Set(scanner.ports.map(\.pid))
+                    HStack(spacing: 8) {
+                        Text(L("Stop %d processes?", pids.count))
                             .font(.caption)
-                        Text(L("Stop all"))
-                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Button(L("Cancel")) {
+                            confirmStopAll = false
+                        }
+                        .buttonStyle(.plain)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        Button(L("Stop")) {
+                            confirmStopAll = false
+                            for pid in pids {
+                                ProcessManager.kill(pid: pid)
+                            }
+                            rescanAfter(seconds: 4)
+                        }
+                        .buttonStyle(.plain)
+                        .font(.caption.bold())
+                        .foregroundStyle(.red)
                     }
-                    .foregroundStyle(.red.opacity(0.8))
+                    .padding(.horizontal, 16)
+                } else {
+                    Button {
+                        confirmStopAll = true
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.caption)
+                            Text(L("Stop all"))
+                                .font(.caption)
+                        }
+                        .foregroundStyle(.red.opacity(0.8))
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.horizontal, 16)
                 }
-                .buttonStyle(.plain)
-                .padding(.horizontal, 16)
             }
 
             // REFRESH INFO
@@ -148,7 +175,9 @@ struct PortListView: View {
                             try SMAppService.mainApp.unregister()
                         }
                     } catch {
-                        print("Launch at login error: \(error)")
+                        Logger(subsystem: "com.carloscosta.Janus", category: "LaunchAtLogin")
+                            .error("Launch at login error: \(error.localizedDescription, privacy: .public)")
+                        launchAtLogin = SMAppService.mainApp.status == .enabled
                     }
                 }
                 .toggleStyle(.checkbox)
@@ -168,14 +197,7 @@ struct PortListView: View {
                 .foregroundStyle(.secondary)
                 .font(.caption)
                 Button {
-                    let url = Bundle.main.bundleURL
-                    let config = NSWorkspace.OpenConfiguration()
-                    config.createsNewApplicationInstance = true
-                    NSWorkspace.shared.openApplication(at: url, configuration: config)
-                    Task { @MainActor in
-                        try? await Task.sleep(for: .milliseconds(500))
-                        NSApplication.shared.terminate(nil)
-                    }
+                    relaunchApp()
                 } label: {
                     Label {
                         Text(L("Restart"))
@@ -232,6 +254,27 @@ struct PortListView: View {
                 ProcessManager.openTerminal(path: entry.projectPath)
             }
         )
+    }
+
+    /// Relaunch Janus. A helper waits for this instance to exit before
+    /// reopening the bundle: launching the new copy while this one is still
+    /// alive made the duplicate-instance guard quit the *new* copy, leaving
+    /// no Janus running at all.
+    private func relaunchApp() {
+        let helper = Process()
+        helper.executableURL = URL(fileURLWithPath: "/bin/sh")
+        helper.arguments = [
+            "-c", "while /bin/kill -0 \"$1\" 2>/dev/null; do sleep 0.2; done; /usr/bin/open \"$2\"",
+            "sh", String(ProcessInfo.processInfo.processIdentifier), Bundle.main.bundlePath,
+        ]
+        do {
+            try helper.run()
+        } catch {
+            Logger(subsystem: "com.carloscosta.Janus", category: "Relaunch")
+                .error("relaunch helper failed: \(error.localizedDescription, privacy: .public)")
+            return
+        }
+        NSApplication.shared.terminate(nil)
     }
 
     /// Trigger a follow-up scan after `seconds` so the UI reflects the result

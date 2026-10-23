@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import os
 import SwiftUI
 
 @main
@@ -17,7 +18,11 @@ struct JanusApp: App {
         }
 
         // One-shot migration: pull favorites from the old LocalPorts bundle on first launch.
-        JanusApp.migrateFromLocalPortsIfNeeded()
+        let migrated = FavoritesManager.migrateLegacyFavorites()
+        if migrated > 0 {
+            Logger(subsystem: "com.carloscosta.Janus", category: "Migration")
+                .info("migrated \(migrated, privacy: .public) favorite ports from LocalPorts")
+        }
 
         _favoritesManager = State(initialValue: FavoritesManager())
         scanner.startPolling()
@@ -39,22 +44,5 @@ struct JanusApp: App {
         }
         .menuBarExtraStyle(.window)
         .defaultSize(width: 380, height: 500)
-    }
-
-    /// On the very first launch of Janus, copy favorites previously stored by LocalPorts
-    /// so users renaming from the old app don't lose their pinned ports.
-    private static func migrateFromLocalPortsIfNeeded() {
-        let key = "favoritePorts"
-        let defaults = UserDefaults.standard
-        if defaults.object(forKey: key) != nil { return }
-
-        let oldPlistPath = NSHomeDirectory() + "/Library/Preferences/com.carloscosta.LocalPorts.plist"
-        guard FileManager.default.fileExists(atPath: oldPlistPath),
-              let plist = NSDictionary(contentsOfFile: oldPlistPath) as? [String: Any],
-              let oldFavorites = plist[key] as? [Int],
-              !oldFavorites.isEmpty else { return }
-
-        defaults.set(oldFavorites, forKey: key)
-        print("Janus: migrated \(oldFavorites.count) favorite ports from LocalPorts")
     }
 }
