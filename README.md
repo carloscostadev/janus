@@ -29,7 +29,11 @@ A lightweight macOS menu bar app that monitors all active localhost ports. See w
 
 Download the latest `.zip` from [Releases](https://github.com/carloscostadev/janus/releases/latest), unzip, and drag `Janus.app` to `/Applications`.
 
-> On first launch, right-click the app and select "Open" to bypass Gatekeeper.
+Janus is open source and not notarized by Apple, so macOS asks for confirmation on first launch:
+
+- **macOS 15 or later:** try to open Janus, then go to **System Settings > Privacy & Security** and click **Open Anyway**.
+- **macOS 14:** right-click `Janus.app` and choose **Open**.
+- **Terminal (any version):** `xattr -dr com.apple.quarantine /Applications/Janus.app`
 
 ## Build from Source
 
