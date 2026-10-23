@@ -18,10 +18,12 @@ A lightweight macOS menu bar app that monitors all active localhost ports. See w
 - **Real-time port scanning** - auto-refreshes every 3s, no config needed
 - **Project detection** - groups ports by project root (finds `.git`, `package.json`, `Gemfile`, `composer.json`, `go.mod`)
 - **Favorites** - pin frequently used ports to the top, persisted across restarts
-- **Process management** - kill, restart, or open any port in the browser with one click
+- **Process management** - kill, restart, or open any port in the browser with one click ("Stop all" asks for confirmation; only your own processes can be signalled)
 - **Open in terminal** - jump straight to the project directory in Warp or Terminal
 - **Launch at login** - starts automatically with macOS
-- **Noise filter** - hides system processes (ControlCenter, rapportd, Spotify, Cursor, AnyDesk, GitHub Desktop, etc.)
+- **Noise filter** - hides system processes (ControlCenter, rapportd, Spotify, Cursor, AnyDesk, GitHub Desktop, Tailscale, etc.)
+- **Lightweight** - one `lsof` call per scan, working directories read natively; under 2% of one CPU core on average while idle
+- **English and Portuguese (pt-PT)** - follows the macOS language
 
 ## Install
 
@@ -43,7 +45,10 @@ cd janus
 # Open in Xcode (with SwiftUI previews)
 open Package.swift
 
-# Or build, install and run from terminal
+# Run the tests
+swift test
+
+# Or build, install to /Applications and run from terminal
 ./scripts/dev.sh
 ```
 
@@ -51,7 +56,7 @@ open Package.swift
 
 - macOS 14.0 (Sonoma) or later
 - Apple Silicon or Intel
-- Xcode 15+ (for development only)
+- Xcode 16+ / Swift 6 toolchain (for development only; tests use Swift Testing)
 
 ## License
 

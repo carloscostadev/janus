@@ -5,6 +5,32 @@ All notable changes to Janus are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- Port scans run on a background task; the menu bar UI never waits for `lsof`.
+- Listening sockets come from a single `lsof` call, executed directly (no intermediate shell).
+- Working directories are read natively (`proc_pidinfo`) instead of a second `lsof` call.
+- Project roots are cached per directory between scans; the port list is only republished when it actually changes, and the polling timer allows the system to coalesce wakeups. Measured idle cost dropped from about 2.8% to 1.7% of one CPU core (app plus child processes).
+- "Stop all" now asks for confirmation and signals each process once.
+- Favorites migration from LocalPorts reads the old preferences through the system (`cfprefsd`) instead of the raw `.plist` file.
+- Tailscale (`IPNExtension`) is hidden by the noise filter.
+- User-visible text is localized in English and Portuguese (pt-PT).
+
+### Fixed
+- The in-app "Restart" button could leave no Janus running: the new copy saw the old one still alive and quit itself.
+- Command output larger than 64 KB could hang a scan (pipe was read only after the process exited).
+- A failed `lsof` run no longer blanks the port list; the last known list is kept.
+- The "Launch at login" checkbox reverts to the real state when macOS refuses the change.
+
+### Security
+- Kill and restart only act on processes owned by the current user, never on launchd or Janus itself.
+- The whole process group is only signalled when safe: never `kill(-1)`, never Janus's own group, another user's group or a group led by an `.app` (for example an editor that spawned the dev server).
+- The delayed SIGKILL checks that the PID still belongs to the same process, so a reused PID is never hit.
+
+### Removed
+- Screenshot from the README and the unused `docs/screenshot.png`.
+
 ## [1.0.0] - 2026-05-27
 
 ### Changed
@@ -67,4 +93,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Process management: kill, restart, or open a port in the browser.
 - Open a project directory directly in the terminal.
 
+[Unreleased]: https://github.com/carloscostadev/janus/compare/v1.0.0...HEAD
 [1.0.0]: https://github.com/carloscostadev/janus/releases/tag/v1.0.0
