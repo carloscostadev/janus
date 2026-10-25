@@ -8,6 +8,8 @@ struct PortListView: View {
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
     /// Two-step "Stop all": first click asks, second click kills.
     @State private var confirmStopAll: Bool
+    /// Measured height of the port list, so the ScrollView can size to it.
+    @State private var listHeight: CGFloat = 0
     /// Port whose row shows its hover actions without a pointer (snapshots).
     private let revealActionsForPort: Int?
 
@@ -49,12 +51,21 @@ struct PortListView: View {
                 .padding(.horizontal, Theme.Spacing.lg)
                 .padding(.top, Theme.Spacing.md)
 
+            // A MenuBarExtra window sizes itself to the ideal size of its content,
+            // and a ScrollView's ideal height is near zero. Measure the list and
+            // give the ScrollView an explicit height (capped) so every row shows.
             ScrollView {
                 portList
                     .padding(.horizontal, Theme.Spacing.lg - Theme.Spacing.sm)
                     .padding(.vertical, Theme.Spacing.sm)
+                    .background(
+                        GeometryReader { proxy in
+                            Color.clear.preference(key: ListHeightKey.self, value: proxy.size.height)
+                        }
+                    )
             }
-            .frame(maxHeight: Theme.Size.listMaxHeight)
+            .onPreferenceChange(ListHeightKey.self) { listHeight = $0 }
+            .frame(height: min(listHeight, Theme.Size.listMaxHeight))
             .padding(.top, Theme.Spacing.xs)
 
             if !scanner.ports.isEmpty {
@@ -360,5 +371,13 @@ struct PortListView: View {
             try? await Task.sleep(for: .seconds(seconds))
             scanner.scan()
         }
+    }
+}
+
+/// Height of the port list content, read by `PortListView` to size its ScrollView.
+private struct ListHeightKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
     }
 }

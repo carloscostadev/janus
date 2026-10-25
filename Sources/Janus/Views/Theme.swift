@@ -97,7 +97,7 @@ enum Theme {
         static let popoverWidth: CGFloat = 380
         static let popoverDefaultHeight: CGFloat = 500
         /// The port list grows with its content up to this height, then scrolls.
-        static let listMaxHeight: CGFloat = 300
+        static let listMaxHeight: CGFloat = 420
         static let dot: CGFloat = 6
         static let hairline: CGFloat = 1
         /// Hit area of an icon-only button (the glyph itself is `Font.icon`).
