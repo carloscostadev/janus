@@ -1,10 +1,10 @@
 import AppKit
 import SwiftUI
 
-/// Janus mark 1.3 (janus-marca-v3): symbol J2 "passage", a doorway arch on a
+/// Janus mark 1.3 (brand/): symbol J2 "passage", a doorway arch on a
 /// 64 × 64 grid, 5-unit stroke, round caps and joins, both pillars cut by the
 /// horizon. Drawn in code so the app bundle needs no resources. Path copied from
-/// svg/janus-symbol-*.svg: `M18 50.5V44M18 35.6V27.5A14 14 0 0 1 46 27.5V35.6M46 44V50.5`.
+/// brand/svg/janus-symbol-*.svg: `M18 50.5V44M18 35.6V27.5A14 14 0 0 1 46 27.5V35.6M46 44V50.5`.
 enum JanusMark {
     /// Inked area on the 64-unit grid, round caps included (y down).
     static let inkRect = CGRect(x: 15.5, y: 11, width: 33, height: 42)
@@ -25,7 +25,7 @@ enum JanusMark {
     }()
 
     /// JANUS wordmark on its W1-H grid (205 × 40.6 units, y down), copied from
-    /// svg/janus-wordmark-*.svg: straight strokes as polygons, the curves as circle
+    /// brand/svg/janus-wordmark-*.svg: straight strokes as polygons, the curves as circle
     /// arcs; J, A and N are cut by the same horizontal gap between y 24.5 and 27.9.
     static let wordmark: CGPath = {
         let path = CGMutablePath()
@@ -84,7 +84,7 @@ enum JanusMark {
         return path
     }()
 
-    /// Lockup as in svg/janus-lockup-*.svg: wordmark at 60% scale, origin (64.5, 20) on
+    /// Lockup as in brand/svg/janus-lockup-*.svg: wordmark at 60% scale, origin (64.5, 20) on
     /// the symbol's grid. Inked area, round caps included.
     static let lockupInkRect = CGRect(x: 15.5, y: 11, width: 172, height: 42)
     static let wordmarkOrigin = CGPoint(x: 64.5, y: 20)

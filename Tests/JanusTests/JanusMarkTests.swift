@@ -2,7 +2,7 @@ import AppKit
 import Testing
 @testable import Janus
 
-/// Geometry of the mark 1.3 paths against the boxes of svg/janus-*.svg.
+/// Geometry of the mark 1.3 paths against the boxes of brand/svg/janus-*.svg.
 struct JanusMarkTests {
     static func isClose(_ a: CGRect, _ b: CGRect, tolerance: CGFloat = 0.01) -> Bool {
         abs(a.minX - b.minX) < tolerance && abs(a.minY - b.minY) < tolerance

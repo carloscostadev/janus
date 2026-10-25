@@ -3,7 +3,7 @@ import Foundation
 
 // Generate the macOS-style app icon for Janus, at 1024 px and every size of the iconset.
 // Monochrome, in the style of Thoth: black rounded square, white Janus symbol J2
-// (mark 1.3, janus-marca-v3). Same path as Sources/Janus/Views/JanusMark.swift.
+// (mark 1.3, brand/svg/janus-symbol-*.svg). Same path as Sources/Janus/Views/JanusMark.swift.
 // Each size is drawn from the vector (no resampling, no metadata added by other tools).
 //
 // Regenerate the app icon (from app/):
