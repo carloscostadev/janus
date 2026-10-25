@@ -32,17 +32,16 @@ struct JanusApp: App {
         MenuBarExtra {
             PortListView(scanner: scanner, favoritesManager: favoritesManager)
         } label: {
-            HStack(spacing: 2) {
+            HStack(spacing: Theme.Spacing.xxs) {
                 Image(systemName: "network")
-                    .font(.body)
+                    .font(Theme.Font.menuBarIcon)
                 if !scanner.ports.isEmpty {
                     Text("\(String(scanner.ports.count))")
-                        .font(.system(.caption2, design: .rounded))
-                        .fontWeight(.bold)
+                        .font(Theme.Font.menuBarCount)
                 }
             }
         }
         .menuBarExtraStyle(.window)
-        .defaultSize(width: 380, height: 500)
+        .defaultSize(width: Theme.Size.popoverWidth, height: Theme.Size.popoverDefaultHeight)
     }
 }

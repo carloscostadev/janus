@@ -2,20 +2,31 @@
 
 /* Brand mark in the menu header is intentionally NOT localized. */
 
-/* Status pill next to brand */
+/* Status chip next to brand */
 "No Ports" = "Sem portas";
 "%d Active" = "%d Ativas";
 
-/* Stat card labels */
-"PORTS" = "PORTAS";
+/* Header card: big number and metrics */
+"Listening ports" = "Portas à escuta";
 "FAVORITES" = "FAVORITOS";
 "PROJECTS" = "PROJETOS";
+"Processes" = "Processos";
 
 /* Empty state */
 "No active ports" = "Nenhuma porta ativa";
+"Dev servers show up here as soon as they listen on a port." = "Os servidores locais aparecem aqui assim que escutam numa porta.";
 
 /* Section header */
 "Favorites" = "Favoritos";
+
+/* Port row (accessibility labels and tooltips) */
+"Port %d" = "Porta %d";
+"Add to favorites" = "Adicionar aos favoritos";
+"Remove from favorites" = "Remover dos favoritos";
+"Open in terminal" = "Abrir no terminal";
+"Open in browser" = "Abrir no browser";
+"Restart process" = "Reiniciar processo";
+"Stop process" = "Parar processo";
 
 /* Footer controls */
 "Stop all" = "Parar todas";

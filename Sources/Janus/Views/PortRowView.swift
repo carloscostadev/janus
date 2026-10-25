@@ -9,96 +9,120 @@ struct PortRowView: View {
     let onRestart: () -> Void
     let onToggleFavorite: () -> Void
     let onOpenInWarp: () -> Void
+    /// Shows the hover actions without a pointer (snapshots).
+    var revealActions: Bool = false
     @State private var isKilling = false
+    @State private var isHovered = false
+
+    private var showsActions: Bool { isHovered || revealActions || isKilling }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                HStack(spacing: 6) {
-                    Text(":\(String(entry.port))")
-                        .font(.system(.body, design: .monospaced))
-                        .fontWeight(.medium)
-                        .foregroundStyle(.white)
+        HStack(alignment: .center, spacing: Theme.Spacing.sm) {
+            Circle()
+                .fill(Theme.portStatusColor(isBusy: isKilling))
+                .frame(width: Theme.Size.dot, height: Theme.Size.dot)
 
-                    Circle()
-                        .fill(isKilling ? .yellow : .green)
-                        .frame(width: 6, height: 6)
-
-                    Text(entry.processName)
-                        .font(.system(.caption2, design: .monospaced))
-                        .foregroundStyle(.tertiary)
+            VStack(alignment: .leading, spacing: Theme.Spacing.xxs) {
+                HStack(alignment: .firstTextBaseline, spacing: Theme.Spacing.sm) {
+                    Text(verbatim: ":\(entry.port)")
+                        .font(Theme.Font.port)
+                        .foregroundStyle(Theme.Palette.textPrimary)
+                    Text(verbatim: entry.processName)
+                        .font(Theme.Font.captionNumber)
+                        .foregroundStyle(Theme.Palette.textSecondary)
+                        .lineLimit(1)
+                    Text(verbatim: "PID \(entry.pid)")
+                        .font(Theme.Font.captionNumber)
+                        .foregroundStyle(Theme.Palette.textTertiary)
+                        .lineLimit(1)
                 }
 
-                Spacer()
-
-                // Action buttons
-                HStack(spacing: 6) {
-                    Button(action: onToggleFavorite) {
-                        Image(systemName: isFavorite ? "star.fill" : "star")
-                            .font(.caption)
-                            .foregroundStyle(isFavorite ? .yellow : .secondary)
-                    }
-                    .buttonStyle(.borderless)
-
-                    Button(action: onOpenInWarp) {
-                        Image(systemName: "terminal")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    .buttonStyle(.borderless)
-                    .disabled(isKilling)
-
-                    Button(action: onOpenBrowser) {
-                        Image(systemName: "globe")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    .buttonStyle(.borderless)
-                    .disabled(isKilling)
-
-                    Button {
-                        isKilling = true
-                        onRestart()
-                        clearKillingAfter(seconds: 4)
-                    } label: {
-                        Image(systemName: "arrow.clockwise")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    .buttonStyle(.borderless)
-                    .disabled(isKilling)
-
-                    Button {
-                        isKilling = true
-                        onKill()
-                        clearKillingAfter(seconds: 5)
-                    } label: {
-                        if isKilling {
-                            ProgressView()
-                                .controlSize(.mini)
-                        } else {
-                            Image(systemName: "xmark.circle")
-                                .font(.caption)
-                                .foregroundStyle(.red)
-                        }
-                    }
-                    .buttonStyle(.borderless)
-                    .disabled(isKilling)
+                if showPath && entry.displayPath.contains("/") {
+                    Text(verbatim: entry.displayPath)
+                        .font(Theme.Font.captionNumber)
+                        .foregroundStyle(Theme.Palette.textTertiary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
                 }
             }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(accessibilitySummary)
+            .accessibilityAction(named: favoriteLabel, onToggleFavorite)
+            .accessibilityAction(named: L("Open in terminal"), onOpenInWarp)
+            .accessibilityAction(named: L("Open in browser"), onOpenBrowser)
+            .accessibilityAction(named: L("Restart process"), restart)
+            .accessibilityAction(named: L("Stop process"), kill)
 
-            if showPath && entry.displayPath.contains("/") {
-                Text(entry.displayPath)
-                    .font(.system(.caption, design: .monospaced))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-            }
+            Spacer(minLength: Theme.Spacing.xs)
+
+            actions
         }
-        .padding(10)
-        .background(.white.opacity(0.03))
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-        .opacity(isKilling ? 0.5 : 1)
+        .padding(.horizontal, Theme.Spacing.sm)
+        .padding(.vertical, Theme.Spacing.xs + Theme.Spacing.xxs)
+        .background(
+            RoundedRectangle(cornerRadius: Theme.Radius.sm, style: .continuous)
+                .fill(isHovered ? Theme.Palette.surface : .clear)
+        )
+        .contentShape(Rectangle())
+        .onHover { hovering in
+            withAnimation(Theme.Motion.hover) { isHovered = hovering }
+        }
+        .opacity(isKilling ? Theme.Opacity.busy : 1)
+    }
+
+    /// Discreet actions: shown on hover, except a favorite's star, which stays as
+    /// the row's selected state.
+    private var actions: some View {
+        HStack(spacing: 0) {
+            Group {
+                ThemeIconButton(systemImage: "terminal", label: L("Open in terminal"), action: onOpenInWarp)
+                ThemeIconButton(systemImage: "globe", label: L("Open in browser"), action: onOpenBrowser)
+                ThemeIconButton(systemImage: "arrow.clockwise", label: L("Restart process"), action: restart)
+                if isKilling {
+                    ProgressView()
+                        .controlSize(.mini)
+                        .frame(width: Theme.Size.iconButton, height: Theme.Size.iconButton)
+                } else {
+                    ThemeIconButton(systemImage: "xmark.circle", label: L("Stop process"),
+                                    color: Theme.Palette.negative, action: kill)
+                }
+            }
+            .disabled(isKilling)
+            .opacity(showsActions ? 1 : 0)
+
+            ThemeIconButton(
+                systemImage: isFavorite ? "star.fill" : "star",
+                label: favoriteLabel,
+                color: isFavorite ? Theme.Palette.accent : Theme.Palette.textSecondary,
+                action: onToggleFavorite
+            )
+            .opacity(showsActions || isFavorite ? 1 : 0)
+        }
+    }
+
+    private var favoriteLabel: String {
+        isFavorite ? L("Remove from favorites") : L("Add to favorites")
+    }
+
+    private var accessibilitySummary: String {
+        var parts = [L("Port %d", entry.port), entry.processName, "PID \(entry.pid)"]
+        if showPath && entry.displayPath.contains("/") { parts.append(entry.displayPath) }
+        if isFavorite { parts.append(L("Favorites")) }
+        return parts.joined(separator: ", ")
+    }
+
+    private func restart() {
+        guard !isKilling else { return }
+        isKilling = true
+        onRestart()
+        clearKillingAfter(seconds: 4)
+    }
+
+    private func kill() {
+        guard !isKilling else { return }
+        isKilling = true
+        onKill()
+        clearKillingAfter(seconds: 5)
     }
 
     /// Reset the `isKilling` spinner after `seconds`. Uses a Task instead of
