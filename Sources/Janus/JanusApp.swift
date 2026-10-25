@@ -33,8 +33,7 @@ struct JanusApp: App {
             PortListView(scanner: scanner, favoritesManager: favoritesManager)
         } label: {
             HStack(spacing: Theme.Spacing.xxs) {
-                Image(systemName: "network")
-                    .font(Theme.Font.menuBarIcon)
+                Image(nsImage: JanusMark.menuBarImage)
                 if !scanner.ports.isEmpty {
                     Text("\(String(scanner.ports.count))")
                         .font(Theme.Font.menuBarCount)

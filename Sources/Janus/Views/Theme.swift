@@ -66,10 +66,7 @@ enum Theme {
         /// Group headings (project folder names keep their case).
         static let groupTitle = SwiftUI.Font.system(size: 11, weight: .medium, design: .monospaced)
         static let icon = SwiftUI.Font.system(size: 11, weight: .regular)
-        /// JANUS wordmark of the header lockup.
-        static let wordmark = SwiftUI.Font.system(size: 13, weight: .semibold, design: .monospaced)
-        /// Menu bar label: the symbol and the port count next to it.
-        static let menuBarIcon = SwiftUI.Font.body
+        /// Menu bar label: the port count next to the symbol.
         static let menuBarCount = SwiftUI.Font.system(.caption2, design: .rounded).weight(.bold)
         /// Glyph of the empty state.
         static let emptyIcon = SwiftUI.Font.system(size: 22, weight: .light)
@@ -77,8 +74,6 @@ enum Theme {
 
     /// Letter spacing for uppercase monospaced labels.
     static let labelTracking: CGFloat = 1.0
-    /// Letter spacing of the wordmark.
-    static let wordmarkTracking: CGFloat = 2.5
 
     // MARK: - Spacing, radii, sizes
 
@@ -109,8 +104,6 @@ enum Theme {
         static let iconButton: CGFloat = 24
         /// Visible height of the symbol in the popover header's lockup.
         static let headerMark: CGFloat = 18
-        /// Line width of the mark's strokes, relative to its height.
-        static let markStrokeRatio: CGFloat = 0.075
     }
 
     enum Opacity {
