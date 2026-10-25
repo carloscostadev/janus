@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Redesigned interface, in the style of Thoth: one `Theme` for the light and dark palettes, type scale, spacing and cards; a header with the Janus mark and the number of listening ports in large type; hairlines between project groups; ports and PIDs in a monospaced font; row actions shown on hover, with tooltips and accessibility labels. Green and red only mark a live port and destructive actions, and every text color meets WCAG AA contrast in both themes.
 - Port scans run on a background task; the menu bar UI never waits for `lsof`.
 - Listening sockets come from a single `lsof` call, executed directly (no intermediate shell).
 - Working directories are read natively (`proc_pidinfo`) instead of a second `lsof` call.
