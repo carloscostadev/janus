@@ -10,9 +10,13 @@ permissions:
 
 jobs:
   build:
-    runs-on: macos-14
+    # macos-15 ships Xcode 16 (Swift 6), same as CI; tests use Swift Testing.
+    runs-on: macos-15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
+
+      - name: Test
+        run: swift test
 
       - name: Build release
         run: |
@@ -87,7 +91,7 @@ jobs:
           ditto -c -k --keepParent "$APP_BUNDLE" "$APP_NAME-$VERSION-mac.zip"
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: Janus-*-mac.zip
           generate_release_notes: true
