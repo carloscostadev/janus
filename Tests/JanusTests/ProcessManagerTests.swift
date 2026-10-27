@@ -154,6 +154,8 @@ private func spawnSleeper(_ seconds: String = "30") throws -> Process {
     try FileManager.default.copyItem(atPath: "/bin/sleep", toPath: sleeper.path)
     #expect(Shell.run("/usr/bin/codesign", ["-f", "-s", "-", sleeper.path]) != nil)
 
+    #expect(ProcessManager.getEnvironment(pid: 1) == nil)
+
     let child = Process()
     child.executableURL = sleeper
     child.arguments = ["30"]
@@ -161,8 +163,25 @@ private func spawnSleeper(_ seconds: String = "30") throws -> Process {
     try child.run()
     defer { child.terminate() }
     let pid = Int(child.processIdentifier)
-    #expect(ProcessManager.getArgv(pid: pid) == [sleeper.path, "30"])
+    var argv = ProcessManager.getArgv(pid: pid)
+    for _ in 0..<40 where argv == nil && child.isRunning {
+        Thread.sleep(forTimeInterval: 0.05)
+        argv = ProcessManager.getArgv(pid: pid)
+    }
+
+    // /bin/sleep only ships an arm64e slice on Apple Silicon, and some hosts
+    // (the GitHub macOS runners) refuse to run an ad-hoc signed arm64e copy.
+    // There, check argv on the original binary; the environment stays hidden.
+    guard child.isRunning, argv != nil else {
+        let plain = Process()
+        plain.executableURL = URL(fileURLWithPath: "/bin/sleep")
+        plain.arguments = ["30"]
+        try plain.run()
+        defer { plain.terminate() }
+        #expect(ProcessManager.getArgv(pid: Int(plain.processIdentifier)) == ["/bin/sleep", "30"])
+        return
+    }
+    #expect(argv == [sleeper.path, "30"])
     let env = try #require(ProcessManager.getEnvironment(pid: pid))
     #expect(env["JANUS_TEST_ENV"] == "port 4000")
-    #expect(ProcessManager.getEnvironment(pid: 1) == nil)
 }
