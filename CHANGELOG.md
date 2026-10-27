@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Every stop, restart, "Stop all" and "Open in terminal" ends in a short status line in the popover: stopped, restarted (with the new PID), relaunched but not listening yet, the port taken by another process, not allowed, or still running.
+- A notice when a scan fails ("Couldn't read ports · retrying"): the list shown may be out of date.
+- "Show system processes" option in the popover footer (off by default) to list the processes the noise filter hides.
+- Restart relaunches the command with the process's own environment variables (e.g. `PORT`), not only its arguments and folder.
+- Opt-in end-to-end test that restarts real servers (python, node, npm run dev, a wrapper script); README image of the popover.
+
+### Changed
+- Stop and restart wait for the process to actually exit (polling instead of fixed delays) and the row shows a spinner until the action ends.
+
+### Security
+- The process identity (owner and start time) is captured at scan time: stop and restart leave a PID alone if it now belongs to a different process.
+- Exited processes awaiting collection (zombies) count as gone.
+
 ## [1.1.0] - 2026-10-25
 
 ### Changed
