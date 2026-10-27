@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-10-27
+
 ### Added
 - Every stop, restart, "Stop all" and "Open in terminal" ends in a short status line in the popover: stopped, restarted (with the new PID), relaunched but not listening yet, the port taken by another process, not allowed, or still running.
 - A notice when a scan fails ("Couldn't read ports · retrying"): the list shown may be out of date.
@@ -111,6 +113,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Process management: kill, restart, or open a port in the browser.
 - Open a project directory directly in the terminal.
 
-[Unreleased]: https://github.com/carloscostadev/janus/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/carloscostadev/janus/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/carloscostadev/janus/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/carloscostadev/janus/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/carloscostadev/janus/releases/tag/v1.0.0

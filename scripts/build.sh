@@ -5,7 +5,7 @@ APP_NAME="Janus"
 BUILD_DIR="build"
 APP_BUNDLE="$BUILD_DIR/$APP_NAME.app"
 ICON_SRC_DIR="Sources/Janus/Resources/Assets.xcassets/AppIcon.appiconset"
-VERSION="1.1.0"
+VERSION="1.2.0"
 
 echo "Building $APP_NAME (release, universal: arm64 + x86_64)..."
 swift build -c release --arch arm64 --arch x86_64
