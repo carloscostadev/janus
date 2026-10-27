@@ -5,12 +5,31 @@ import Observation
 @MainActor
 final class PortScanner {
     var ports: [PortEntry] = []
+    /// True when the last scan could not run `lsof`: the list shown is the
+    /// last good one and may be out of date. Cleared by the next good scan.
+    var lastScanFailed = false
+    /// Show the processes in `systemProcesses` too (off by default). Saved in
+    /// UserDefaults; changing it rescans right away.
+    var showSystemProcesses: Bool {
+        didSet {
+            guard showSystemProcesses != oldValue else { return }
+            defaults.set(showSystemProcesses, forKey: Self.showSystemProcessesKey)
+            scan()
+        }
+    }
+    @ObservationIgnored private let defaults: UserDefaults
+    nonisolated static let showSystemProcessesKey = "showSystemProcesses"
     @ObservationIgnored private var timer: Timer?
     /// Guards against overlapping scans if one ever takes longer than the interval.
     @ObservationIgnored private var isScanning = false
     /// cwd -> project root. Only touched on the main actor; a snapshot is
     /// handed to the background scan and the pruned result stored back.
     @ObservationIgnored private var projectRootCache: [String: String] = [:]
+
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+        self.showSystemProcesses = defaults.bool(forKey: Self.showSystemProcessesKey)
+    }
 
     /// Processes whose listening ports we always want hidden - system services
     /// and noisy desktop apps that aren't relevant to dev work.
@@ -64,14 +83,20 @@ final class PortScanner {
         let projectRootCache: [String: String]
     }
 
+    nonisolated static func runLsof() -> String? {
+        Shell.run("/usr/sbin/lsof", ["-iTCP", "-sTCP:LISTEN", "-P", "-n"])
+    }
+
     /// One full scan: a single `lsof` for listening sockets (exec'd directly,
     /// no shell), cwds read natively, project roots served from `rootCache`
     /// when the cwd was already resolved. Returns `nil` when `lsof` could not
     /// run, so the caller keeps the last known list instead of blanking it.
-    nonisolated static func performScan(rootCache: [String: String]) -> ScanResult? {
-        guard let output = Shell.run("/usr/sbin/lsof", ["-iTCP", "-sTCP:LISTEN", "-P", "-n"]) else { return nil }
+    /// `lsof` is injectable for tests.
+    nonisolated static func performScan(rootCache: [String: String], includeSystem: Bool = false,
+                                        lsof: () -> String? = runLsof) -> ScanResult? {
+        guard let output = lsof() else { return nil }
         let rawEntries = parseLsofOutput(output)
-            .filter { !systemProcesses.contains($0.processName) }
+            .filter { includeSystem || !systemProcesses.contains($0.processName) }
 
         var cache: [String: String] = [:]
         var enriched: [PortEntry] = []
@@ -87,7 +112,8 @@ final class PortScanner {
                 port: entry.port,
                 projectPath: resolvedPath,
                 processName: entry.processName,
-                projectRoot: root
+                projectRoot: root,
+                identity: ProcessManager.ProcessIdentity(pid: pid_t(entry.pid))
             ))
         }
 
@@ -103,18 +129,29 @@ final class PortScanner {
         guard !isScanning else { return }
         isScanning = true
         let rootCache = projectRootCache
+        let includeSystem = showSystemProcesses
 
         Task.detached(priority: .utility) { [weak self] in
-            let result = PortScanner.performScan(rootCache: rootCache)
+            let result = PortScanner.performScan(rootCache: rootCache, includeSystem: includeSystem)
             await MainActor.run { [weak self] in
                 guard let self else { return }
                 self.isScanning = false
-                guard let result else { return }
-                self.projectRootCache = result.projectRootCache
-                if self.ports != result.ports {
-                    self.ports = result.ports
-                }
+                self.apply(result)
             }
+        }
+    }
+
+    /// Store a scan result. `nil` (lsof could not run) keeps the last list and
+    /// flags it as possibly stale instead of blanking it.
+    func apply(_ result: ScanResult?) {
+        guard let result else {
+            if !lastScanFailed { lastScanFailed = true }
+            return
+        }
+        if lastScanFailed { lastScanFailed = false }
+        projectRootCache = result.projectRootCache
+        if ports != result.ports {
+            ports = result.ports
         }
     }
 

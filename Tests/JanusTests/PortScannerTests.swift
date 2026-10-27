@@ -1,3 +1,4 @@
+import Foundation
 import Testing
 @testable import Janus
 
@@ -74,5 +75,58 @@ import Testing
     #expect(second.projectRootCache["/stale/path"] == nil)
     for entry in second.ports where seeded[entry.projectPath] != nil {
         #expect(entry.projectRoot == seeded[entry.projectPath])
+    }
+}
+
+private let sampleWithNoise = """
+COMMAND     PID        USER   FD   TYPE             DEVICE SIZE/OFF NODE NAME
+ControlCe   649 someone   10u  IPv4  0xc86c176be83108c      0t0  TCP *:7000 (LISTEN)
+node      26974 someone   16u  IPv6 0xd1a59e60060473ba      0t0  TCP *:3000 (LISTEN)
+"""
+
+@Test func performScanReturnsNilWhenLsofCannotRun() {
+    #expect(PortScanner.performScan(rootCache: [:], lsof: { nil }) == nil)
+}
+
+@Test func performScanHidesSystemProcessesUnlessAsked() throws {
+    let hidden = try #require(PortScanner.performScan(rootCache: [:], lsof: { sampleWithNoise }))
+    #expect(hidden.ports.map(\.port) == [3000])
+    let shown = try #require(PortScanner.performScan(rootCache: [:], includeSystem: true, lsof: { sampleWithNoise }))
+    #expect(shown.ports.map(\.port) == [3000, 7000])
+}
+
+@MainActor
+@Test func failedScanKeepsLastListAndFlagsIt() {
+    let scanner = PortScanner(defaults: UserDefaults(suiteName: "JanusScannerTests-\(UUID().uuidString)")!)
+    let good = PortScanner.performScan(rootCache: [:], lsof: { sampleWithNoise })
+    scanner.apply(good)
+    #expect(scanner.ports.map(\.port) == [3000])
+    #expect(!scanner.lastScanFailed)
+
+    scanner.apply(nil)
+    #expect(scanner.lastScanFailed)
+    #expect(scanner.ports.map(\.port) == [3000])
+
+    scanner.apply(good)
+    #expect(!scanner.lastScanFailed)
+}
+
+@MainActor
+@Test func showSystemProcessesIsSavedAndOffByDefault() {
+    let suite = "JanusScannerTests-\(UUID().uuidString)"
+    let defaults = UserDefaults(suiteName: suite)!
+    let scanner = PortScanner(defaults: defaults)
+    #expect(!scanner.showSystemProcesses)
+    scanner.showSystemProcesses = true
+    #expect(defaults.bool(forKey: PortScanner.showSystemProcessesKey))
+    #expect(PortScanner(defaults: defaults).showSystemProcesses)
+    defaults.removePersistentDomain(forName: suite)
+}
+
+@Test func scanCapturesProcessIdentity() throws {
+    // Entries carry the identity seen at scan time (PID reuse guard).
+    let result = try #require(PortScanner.performScan(rootCache: [:]))
+    for entry in result.ports where ProcessManager.ProcessIdentity(pid: pid_t(entry.pid)) != nil {
+        #expect(entry.identity != nil)
     }
 }

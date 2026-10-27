@@ -39,3 +39,27 @@
 "Stop %d processes?" = "Parar %d processos?";
 "Stop" = "Parar";
 "Cancel" = "Cancelar";
+
+/* Scan failure, action results, system processes */
+":%d · Stopping…" = ":%d · A parar…";
+":%d · Restarting…" = ":%d · A reiniciar…";
+"Stopping %d processes…" = "A parar %d processos…";
+":%d · Stopped, port free" = ":%d · Parado, porta livre";
+":%d · Already stopped" = ":%d · Já estava parado";
+":%d · Stopped, but PID %d listens on it now" = ":%d · Parado, mas o PID %d escuta agora nesta porta";
+":%d · Not stopped: process changed or not yours" = ":%d · Não parado: o processo mudou ou não é teu";
+":%d · Still running after SIGKILL" = ":%d · Continua a correr depois do SIGKILL";
+":%d · Not stopped" = ":%d · Não parado";
+":%d · Restarted (PID %d)" = ":%d · Reiniciado (PID %d)";
+":%d · Relaunched, not listening yet" = ":%d · Relançado, mas ainda não escuta na porta";
+":%d · Not restarted: process already gone" = ":%d · Não reiniciado: o processo já tinha terminado";
+":%d · Not restarted: process changed or not yours" = ":%d · Não reiniciado: o processo mudou ou não é teu";
+":%d · Not restarted: command or folder unreadable" = ":%d · Não reiniciado: não foi possível ler o comando ou a pasta";
+":%d · Stopped, but the command did not relaunch" = ":%d · Parado, mas o comando não voltou a arrancar";
+"Stopped %d processes" = "%d processos parados";
+"Stopped %d of %d processes" = "Parados %d de %d processos";
+"Couldn't open the terminal" = "Não foi possível abrir o terminal";
+"Couldn't read ports · retrying" = "Não foi possível ler as portas · a tentar de novo";
+"The list may be out of date." = "A lista pode estar desatualizada.";
+"Show system processes" = "Mostrar processos do sistema";
+"Also list system services and desktop apps hidden by default." = "Mostra também os serviços do sistema e as apps escondidos por omissão.";

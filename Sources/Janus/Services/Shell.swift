@@ -34,15 +34,24 @@ enum Shell {
         return String(decoding: data, as: UTF8.self)
     }
 
-    /// Fire-and-forget: spawn a detached login shell to run `command` in `cwd`.
-    /// Used for restarting user processes - they must outlive Janus.
-    static func runDetached(_ command: String, cwd: String) {
+    /// Fire-and-forget: spawn a detached shell to run `command` in `cwd`.
+    /// Used for restarting user processes - they must outlive Janus. With
+    /// `environment` (the original process's), the command runs with exactly
+    /// that environment; without it, a login shell rebuilds the user's PATH.
+    /// Returns false when the shell could not be spawned or enter `cwd`.
+    @discardableResult
+    static func runDetached(_ command: String, cwd: String, environment: [String: String]? = nil) -> Bool {
         let escapedCwd = cwd.replacingOccurrences(of: "'", with: "'\\''")
         let wrapped = "cd '\(escapedCwd)' && nohup \(command) > /dev/null 2>&1 &"
 
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/bin/zsh")
-        process.arguments = ["-l", "-c", wrapped]
+        if let environment {
+            process.environment = environment
+            process.arguments = ["-f", "-c", wrapped]
+        } else {
+            process.arguments = ["-l", "-c", wrapped]
+        }
         process.standardOutput = FileHandle.nullDevice
         process.standardError = FileHandle.nullDevice
 
@@ -50,8 +59,9 @@ enum Shell {
             try process.run()
         } catch {
             logger.error("Shell.runDetached failed in \(cwd, privacy: .public): \(error.localizedDescription, privacy: .public)")
-            return
+            return false
         }
         process.waitUntilExit()
+        return process.terminationStatus == 0
     }
 }

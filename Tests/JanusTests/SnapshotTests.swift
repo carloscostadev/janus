@@ -25,9 +25,11 @@ struct SnapshotTests {
         return manager
     }
 
-    static func scanner(with ports: [PortEntry]) -> PortScanner {
-        let scanner = PortScanner()
+    static func scanner(with ports: [PortEntry], failed: Bool = false, showSystem: Bool = false) -> PortScanner {
+        let scanner = PortScanner(defaults: UserDefaults(suiteName: "JanusSnapshotTests-\(UUID().uuidString)")!)
         scanner.ports = ports
+        scanner.lastScanFailed = failed
+        scanner.showSystemProcesses = showSystem
         return scanner
     }
 
@@ -72,5 +74,38 @@ struct SnapshotTests {
                                 favoritesManager: Self.makeFavorites([5432]),
                                 confirmStopAll: true)
         try render(view, name: "stop-all")
+    }
+
+    @Test func scanFailed() throws {
+        let view = PortListView(scanner: Self.scanner(with: Self.samplePorts, failed: true),
+                                favoritesManager: Self.makeFavorites([5432]))
+        try render(view, name: "scan-failed")
+    }
+
+    @Test func actionFeedback() throws {
+        let states: [(String, ActionFeedback, Set<Int>)] = [
+            ("stopping", .working(L(":%d · Stopping…", 3000)), [3000]),
+            ("stopped", .forStop(.stopped, port: 3000), []),
+            ("port-taken", .forStop(.portTaken(pid: 41777), port: 3000), []),
+            ("restarted", .forRestart(.restarted(pid: 41790), port: 5173), []),
+            ("not-listening", .forRestart(.relaunchedNotListening, port: 5173), []),
+            ("refused", .forStop(.refused, port: 8080), []),
+        ]
+        for (name, feedback, busy) in states {
+            let view = PortListView(scanner: Self.scanner(with: Self.samplePorts),
+                                    favoritesManager: Self.makeFavorites([5432]),
+                                    revealActionsForPort: busy.first,
+                                    feedback: feedback, busyPorts: busy)
+            try render(view, name: "feedback-\(name)")
+        }
+    }
+
+    @Test func systemProcessesShown() throws {
+        let withSystem = Self.samplePorts + [
+            PortEntry(pid: 649, port: 7000, projectPath: "ControlCe", processName: "ControlCe", projectRoot: "ControlCe"),
+        ]
+        let view = PortListView(scanner: Self.scanner(with: withSystem, showSystem: true),
+                                favoritesManager: Self.makeFavorites([5432]))
+        try render(view, name: "system-on")
     }
 }

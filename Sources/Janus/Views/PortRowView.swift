@@ -11,8 +11,12 @@ struct PortRowView: View {
     let onOpenInWarp: () -> Void
     /// Shows the hover actions without a pointer (snapshots).
     var revealActions: Bool = false
-    @State private var isKilling = false
+    /// A stop or restart of this port is running (set by the list, which
+    /// knows when the action really ends).
+    var isBusy: Bool = false
     @State private var isHovered = false
+
+    private var isKilling: Bool { isBusy }
 
     private var showsActions: Bool { isHovered || revealActions || isKilling }
 
@@ -112,26 +116,12 @@ struct PortRowView: View {
     }
 
     private func restart() {
-        guard !isKilling else { return }
-        isKilling = true
+        guard !isBusy else { return }
         onRestart()
-        clearKillingAfter(seconds: 4)
     }
 
     private func kill() {
-        guard !isKilling else { return }
-        isKilling = true
+        guard !isBusy else { return }
         onKill()
-        clearKillingAfter(seconds: 5)
-    }
-
-    /// Reset the `isKilling` spinner after `seconds`. Uses a Task instead of
-    /// `DispatchQueue.main.asyncAfter` so it gets cancelled when the view
-    /// disappears (no zombie callbacks against stale state).
-    private func clearKillingAfter(seconds: Int) {
-        Task { @MainActor in
-            try? await Task.sleep(for: .seconds(seconds))
-            isKilling = false
-        }
     }
 }

@@ -7,15 +7,20 @@ struct PortEntry: Identifiable, Equatable, Hashable {
     let processName: String
     /// Pre-computed at scan time so SwiftUI re-renders don't hit the filesystem.
     let projectRoot: String
+    /// Owner and start time captured at scan time. Stop and restart compare it
+    /// with the live process so a reused PID never gets signalled.
+    let identity: ProcessManager.ProcessIdentity?
 
     /// Designated init: callers that already resolved `projectRoot` pass it in
     /// to avoid duplicate filesystem walks. If omitted, we resolve once here.
-    init(pid: Int, port: Int, projectPath: String, processName: String, projectRoot: String? = nil) {
+    init(pid: Int, port: Int, projectPath: String, processName: String, projectRoot: String? = nil,
+         identity: ProcessManager.ProcessIdentity? = nil) {
         self.pid = pid
         self.port = port
         self.projectPath = projectPath
         self.processName = processName
         self.projectRoot = projectRoot ?? Self.resolveProjectRoot(for: projectPath)
+        self.identity = identity
     }
 
     var id: String { "\(pid)-\(port)" }

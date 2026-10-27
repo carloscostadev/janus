@@ -39,3 +39,27 @@
 "Stop %d processes?" = "Stop %d processes?";
 "Stop" = "Stop";
 "Cancel" = "Cancel";
+
+/* Scan failure, action results, system processes */
+":%d · Stopping…" = ":%d · Stopping…";
+":%d · Restarting…" = ":%d · Restarting…";
+"Stopping %d processes…" = "Stopping %d processes…";
+":%d · Stopped, port free" = ":%d · Stopped, port free";
+":%d · Already stopped" = ":%d · Already stopped";
+":%d · Stopped, but PID %d listens on it now" = ":%d · Stopped, but PID %d listens on it now";
+":%d · Not stopped: process changed or not yours" = ":%d · Not stopped: process changed or not yours";
+":%d · Still running after SIGKILL" = ":%d · Still running after SIGKILL";
+":%d · Not stopped" = ":%d · Not stopped";
+":%d · Restarted (PID %d)" = ":%d · Restarted (PID %d)";
+":%d · Relaunched, not listening yet" = ":%d · Relaunched, not listening yet";
+":%d · Not restarted: process already gone" = ":%d · Not restarted: process already gone";
+":%d · Not restarted: process changed or not yours" = ":%d · Not restarted: process changed or not yours";
+":%d · Not restarted: command or folder unreadable" = ":%d · Not restarted: command or folder unreadable";
+":%d · Stopped, but the command did not relaunch" = ":%d · Stopped, but the command did not relaunch";
+"Stopped %d processes" = "Stopped %d processes";
+"Stopped %d of %d processes" = "Stopped %d of %d processes";
+"Couldn't open the terminal" = "Couldn't open the terminal";
+"Couldn't read ports · retrying" = "Couldn't read ports · retrying";
+"The list may be out of date." = "The list may be out of date.";
+"Show system processes" = "Show system processes";
+"Also list system services and desktop apps hidden by default." = "Also list system services and desktop apps hidden by default.";
